@@ -9,13 +9,15 @@
 #import "AddContactViewController.h"
 #import "ContactsStoreManager.h"
 #import "ViewController.h"
+#import "Photos/Photos.h"
 #import "ContactCache.h"
 #import "Constants.h"
 #import "Masonry.h"
 
-@interface AddContactViewController () <UITextFieldDelegate>
+@interface AddContactViewController () <UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate>
 
 @property (nonatomic) ContactsStoreManager* contactsStoreManager;
+@property (nonatomic) dispatch_queue_t photoPermissionQueue;
 @property (nonatomic) UITextField* companyNameTextField;
 @property (nonatomic) UITextField* phoneNumberTextField;
 @property (nonatomic) UITextField* firstNameTextField;
@@ -24,9 +26,10 @@
 @property (nonatomic) UIBarButtonItem* doneBarButton;
 @property (nonatomic) UIImageView* profileImageView;
 @property (nonatomic) UIImageView* phoneImageView;
+@property (nonatomic) CGFloat phoneNumberOrginY;
+@property (nonatomic) NSURL* profileImageURL;
 @property (nonatomic) UIButton* doneButton;
 @property (nonatomic) UILabel* phoneLabel;
-@property (nonatomic) CGFloat phoneNumberOrginY;
 
 @end
 
@@ -38,7 +41,7 @@
     [self setupLayout];
     [self setupBarButton];
     [self setTitle:@"Add Contacts"];
-    
+    _photoPermissionQueue = dispatch_queue_create("PHOTO_PERMISSION_QUEUE", DISPATCH_QUEUE_SERIAL);
     _contactsStoreManager = [ContactsStoreManager sharedInstance];
     [_contactsStoreManager initializeCoreDataURLForResource:@"" andNameTable:@""];
     [self setupDataUpdate];
@@ -72,12 +75,17 @@
 - (void)setupLayout {
     
     _containScrollView = [[UIScrollView alloc] init];
+    UITapGestureRecognizer* dismisKeyboardGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard:)];
+    [_containScrollView addGestureRecognizer:dismisKeyboardGesture];
     [self.view addSubview:_containScrollView];
     
     CGFloat scale = FONTSIZE_SCALE;
     
     _profileImageView = [[UIImageView alloc] init];
     _profileImageView.image = [UIImage imageNamed:@"ic_user"];
+    _profileImageView.userInteractionEnabled = YES;
+    UITapGestureRecognizer* openPickerImageGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(openPickerImage:)];
+    [_profileImageView addGestureRecognizer:openPickerImageGesture];
     [_containScrollView addSubview:_profileImageView];
     
     _firstNameTextField = [[UITextField alloc] init];
@@ -251,6 +259,50 @@
     [self.navigationController popToRootViewControllerAnimated:YES];
 }
 
+#pragma mark - openPickerImage
+
+- (void)openPickerImage:(id)sender {
+    
+    [self checkPermissionPhoto:^(NSString* errorString) {
+        
+        if (!errorString) {
+            
+            UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+            picker.delegate = self;
+            picker.allowsEditing = YES;
+            picker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
+            [self presentViewController:picker animated:YES completion:nil];
+        }
+    }];
+}
+
+#pragma mark - imagePickerController
+
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
+    
+    UIImage* chosenImage = info[UIImagePickerControllerEditedImage];
+    _profileImageURL = (NSURL *)[info valueForKey:UIImagePickerControllerReferenceURL];
+    _profileImageView.image = [self makeRoundImage:[self resizeImage:chosenImage]];
+    [picker dismissViewControllerAnimated:YES completion:NULL];
+}
+
+#pragma mark - imagePickerControllerDidCancel
+
+- (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
+    
+    [picker dismissViewControllerAnimated:YES completion:nil];
+}
+
+#pragma mark - dismissKeyboard
+
+- (void)dismissKeyboard:(id)sender {
+    
+    [_firstNameTextField resignFirstResponder];
+    [_lastNameTextField resignFirstResponder];
+    [_companyNameTextField resignFirstResponder];
+    [_phoneNumberTextField resignFirstResponder];
+}
+
 #pragma mark - search
 
 - (IBAction)cancel:(id)sender {
@@ -344,6 +396,117 @@
         [_containScrollView layoutIfNeeded];
         _containScrollView.contentSize = _containScrollView.frame.size;
     }
+}
+
+#pragma mark - checkPermissionPhoto
+
+- (void)checkPermissionPhoto:(void(^)(NSString *))completion {
+    
+    dispatch_async(_photoPermissionQueue, ^ {
+        
+        PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatus];
+        
+        if (status == PHAuthorizationStatusAuthorized) {
+            
+            // Access has been granted.
+            dispatch_async(dispatch_get_main_queue(), ^ {
+                
+                completion(nil);
+            });
+        } else if (status == PHAuthorizationStatusDenied) {
+            
+            // Access has been denied.
+            dispatch_async(dispatch_get_main_queue(), ^ {
+                
+                completion(@"PHAuthorizationStatusDenied");
+            });
+        } else if (status == PHAuthorizationStatusNotDetermined) {
+            
+            // Access has not been determined.
+            [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+                
+                if (status == PHAuthorizationStatusAuthorized) {
+                    // Access has been granted.
+                    dispatch_async(dispatch_get_main_queue(), ^ {
+                        
+                        completion(nil);
+                    });
+                } else {
+                    // Access has been denied.
+                    dispatch_async(dispatch_get_main_queue(), ^ {
+                        
+                        completion(@"PHAuthorizationStatusDenied");
+                    });
+                }
+            }];
+        } else if (status == PHAuthorizationStatusRestricted) {
+            
+            dispatch_async(dispatch_get_main_queue(), ^ {
+                
+                completion(@"PHAuthorizationStatusRestricted");
+            });
+        }
+    });
+}
+
+#pragma mark - draw image circle
+
+- (UIImage *)makeRoundImage:(UIImage *)image {
+    
+    // Resize image
+    image = [self resizeImage:image];
+    CGFloat imageWidth = image.size.width;
+    CGRect rect = CGRectMake(0, 0, imageWidth, imageWidth);
+    
+    // Begin ImageContext
+    UIGraphicsBeginImageContext(rect.size);
+    
+    // Add a clip before drawing anything, in the shape of an rounded rect
+    [[UIBezierPath bezierPathWithRoundedRect:rect cornerRadius:imageWidth/2] addClip];
+    [image drawInRect:rect];
+    UIImage* imageCircle = UIGraphicsGetImageFromCurrentImageContext();
+    
+    // End ImageContext
+    UIGraphicsEndImageContext();
+    
+    return imageCircle;
+}
+
+#pragma mark - resize image
+
+- (UIImage *)resizeImage:(UIImage *)image {
+    
+    CGAffineTransform scaleTransform;
+    CGPoint origin;
+    CGFloat edgeSquare = 100;
+    CGFloat imageWidth = image.size.width;
+    CGFloat imageHeight = image.size.height;
+    
+    if (imageWidth > imageHeight) {
+        
+        CGFloat scaleRatio = edgeSquare / imageHeight;
+        scaleTransform = CGAffineTransformMakeScale(scaleRatio, scaleRatio);
+        origin = CGPointMake(-(imageWidth - imageHeight) / 2, 0);
+    } else {
+        
+        CGFloat scaleRatio = edgeSquare / imageWidth;
+        scaleTransform = CGAffineTransformMakeScale(scaleRatio, scaleRatio);
+        origin = CGPointMake(0, -(imageHeight - imageWidth) / 2);
+    }
+    
+    CGSize size = CGSizeMake(edgeSquare, edgeSquare);
+    
+    // Begin ImageContext
+    UIGraphicsBeginImageContext(size);
+    
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextConcatCTM(context, scaleTransform);
+    [image drawAtPoint:origin];
+    
+    image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return image;
 }
 
 @end
