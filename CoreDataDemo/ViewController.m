@@ -20,6 +20,7 @@
 #import "NimbusCore.h"
 #import "Constants.h"
 #import "Masonry.h"
+#import "ZLMImageCache.h"
 
 @interface ViewController () <NITableViewModelDelegate, UISearchResultsUpdating, UITableViewDelegate>
 
@@ -115,7 +116,9 @@
                         NSIndexPath* indexPath = [_model indexPathForObject:cellObject];
                         __weak ContactTableViewCell* cell = [_tableView cellForRowAtIndexPath:indexPath];
                         cell.profileImageView.image = image;
-                        [[ContactCache sharedInstance] setImageForKey:image forKey:[obj identifier]];
+                        
+                        [ZLMImageCache.sharedInstance storeImage:image withKey:[obj identifier]];
+//                        [[ContactCache sharedInstance] setImageForKey:image forKey:[obj identifier]];
                     }
                 }];
             }

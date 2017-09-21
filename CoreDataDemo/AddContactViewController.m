@@ -11,8 +11,10 @@
 #import "ContactsStoreManager.h"
 #import "ViewController.h"
 #import "ContactCache.h"
+#import "NIInMemoryCache.h"
 #import "Constants.h"
 #import "Masonry.h"
+#import "ZLMImageCache.h"
 
 @interface AddContactViewController () <UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate>
 
@@ -189,13 +191,14 @@
         
         if ([_contactEntities profileImageURL]) {
             
-            [[ContactCache sharedInstance] getImageForKey:[_contactEntities identifier] completionWith:^(UIImage* image) {
-                
-                if (image) {
-                    
-                    _profileImageView.image = image;
-                }
-            }];
+            _profileImageView.image = [ZLMImageCache.sharedInstance imageFromKey:[_contactEntities identifier] storeToMem:YES];
+//            [[ContactCache sharedInstance] getImageForKey:[_contactEntities identifier] completionWith:^(UIImage* image) {
+//                
+//                if (image) {
+//                    
+//                    _profileImageView.image = image;
+//                }
+//            }];
         }
     }
 }
@@ -239,11 +242,14 @@
         if (_contactEntities.profileImageURL != _profileImageURL.absoluteString) {
             
             _contactEntities.profileImageURL = _profileImageURL.absoluteString;
+            
             [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[_contactEntities profileImageURL]] completion:^(UIImage* image) {
                 
                 if (image) {
                     
-                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:[_contactEntities identifier]] ;
+                    image = [[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]];
+                    [ZLMImageCache.sharedInstance storeImage:image withKey:[_contactEntities identifier]];
+//                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:[_contactEntities identifier]] ;
                 }
             }];
         }
@@ -266,7 +272,9 @@
                 
                 if (image) {
                     
-                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:contactEntities.identifier] ;
+                    image = [[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]];
+                    [ZLMImageCache.sharedInstance storeImage:image withKey:[_contactEntities identifier]];
+//                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:contactEntities.identifier] ;
                 }
             }];
         }
