@@ -10,8 +10,8 @@
 
 @implementation NSDate(Compare)
 
-+ (NSInteger)daysBetweenDate:(NSDate*)fromDateTime andDate:(NSDate*)toDateTime
-{
++ (NSInteger)daysBetweenDate:(NSDate*)fromDateTime andDate:(NSDate*)toDateTime {
+    
     NSDate *fromDate;
     NSDate *toDate;
     

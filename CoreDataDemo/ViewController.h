@@ -12,7 +12,5 @@
 
 @property (nonatomic) BOOL needReload;
 
-- (void)storeImagetoCahes;
-
 @end
 

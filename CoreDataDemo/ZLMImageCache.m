@@ -35,6 +35,7 @@
     
     // I/O
     dispatch_async(_icIOQueue, ^{
+        
         // File manager
         _icFileManager = [NSFileManager defaultManager];
         
@@ -93,7 +94,9 @@
     
     static ZLMImageCache *sharedImageCache;
     static dispatch_once_t onceToken;
+    
     dispatch_once(&onceToken, ^{
+        
         sharedImageCache = [[self alloc] init];
     });
     return sharedImageCache;

@@ -22,7 +22,6 @@ struct LNode {
     LNode *last;
 
     unsigned int size;
-
 }
 
 - (id)init;                                 // init an empty list
