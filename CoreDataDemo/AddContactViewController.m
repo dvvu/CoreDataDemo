@@ -7,9 +7,9 @@
 //
 
 #import "AddContactViewController.h"
+#import "ImageSupporter.h"
 #import "ContactsStoreManager.h"
 #import "ViewController.h"
-#import "Photos/Photos.h"
 #import "ContactCache.h"
 #import "Constants.h"
 #import "Masonry.h"
@@ -17,7 +17,6 @@
 @interface AddContactViewController () <UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate>
 
 @property (nonatomic) ContactsStoreManager* contactsStoreManager;
-@property (nonatomic) dispatch_queue_t photoPermissionQueue;
 @property (nonatomic) UITextField* companyNameTextField;
 @property (nonatomic) UITextField* phoneNumberTextField;
 @property (nonatomic) UITextField* firstNameTextField;
@@ -41,25 +40,10 @@
     [self setupLayout];
     [self setupBarButton];
     [self setTitle:@"Add Contacts"];
-    _photoPermissionQueue = dispatch_queue_create("PHOTO_PERMISSION_QUEUE", DISPATCH_QUEUE_SERIAL);
+    
     _contactsStoreManager = [ContactsStoreManager sharedInstance];
-    [_contactsStoreManager initializeCoreDataURLForResource:@"" andNameTable:@""];
+    [_contactsStoreManager initializeCoreDataURLForResource:@"CoreDataDemo" andNameTable:CONTACTENTITIES];
     [self setupDataUpdate];
-}
-
-#pragma mark - singleton
-
-+ (instancetype)sharedInstance {
-    
-    static AddContactViewController* sharedInstance;
-    static dispatch_once_t onceToken;
-    
-    dispatch_once(&onceToken, ^ {
-        
-        sharedInstance = [[AddContactViewController alloc] init];
-    });
-    
-    return sharedInstance;
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -202,6 +186,17 @@
         [_companyNameTextField setText:[_contactEntities company]];
         [_phoneNumberTextField setText:[_contactEntities phoneNumber]];
         [self phoneTextFieldDidChange:_phoneNumberTextField];
+        
+        if ([_contactEntities profileImageURL]) {
+            
+            [[ContactCache sharedInstance] getImageForKey:[_contactEntities identifier] completionWith:^(UIImage* image) {
+                
+                if (image) {
+                    
+                    _profileImageView.image = image;
+                }
+            }];
+        }
     }
 }
 
@@ -240,8 +235,20 @@
         _contactEntities.lastName = _lastNameTextField.text;
         _contactEntities.phoneNumber = _phoneNumberTextField.text;
         _contactEntities.company = _companyNameTextField.text;
+        
+        if (_contactEntities.profileImageURL != _profileImageURL.absoluteString) {
+            
+            _contactEntities.profileImageURL = _profileImageURL.absoluteString;
+            [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[_contactEntities profileImageURL]] completion:^(UIImage* image) {
+                
+                if (image) {
+                    
+                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:[_contactEntities identifier]] ;
+                }
+            }];
+        }
+        
         [_contactsStoreManager updateObjec:_contactEntities atTable:CONTACTENTITIES];
-        [[ContactCache sharedInstance] setImageForKey:[UIImage imageNamed:@"ic_avatar"] forKey:[_contactEntities identifier]];
     } else {
         
         ContactEntities* contactEntities = [[ContactEntities alloc] initWithContext:_contactsStoreManager.managedObjectContext];
@@ -250,8 +257,19 @@
         contactEntities.phoneNumber = _phoneNumberTextField.text;
         contactEntities.company = _companyNameTextField.text;
         contactEntities.identifier = [[NSUUID UUID] UUIDString];
+        contactEntities.profileImageURL = _profileImageURL.absoluteString;
         [_contactsStoreManager addObject:contactEntities toTable:CONTACTENTITIES];
-        [[ContactCache sharedInstance] setImageForKey:[UIImage imageNamed:@"ic_avatar"] forKey:[contactEntities identifier]];
+        
+        if (_profileImageURL.absoluteString) {
+            
+            [[ImageSupporter sharedInstance] getImagePickerwithURL:_profileImageURL completion:^(UIImage* image) {
+                
+                if (image) {
+                    
+                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:contactEntities.identifier] ;
+                }
+            }];
+        }
     }
     
     ViewController* viewController = (ViewController *)[self.navigationController.viewControllers objectAtIndex:0];
@@ -263,7 +281,9 @@
 
 - (void)openPickerImage:(id)sender {
     
-    [self checkPermissionPhoto:^(NSString* errorString) {
+    [self dismisKeyboard];
+    
+    [[ImageSupporter sharedInstance] checkPermissionPhoto:^(NSString* errorString) {
         
         if (!errorString) {
             
@@ -282,8 +302,9 @@
     
     UIImage* chosenImage = info[UIImagePickerControllerEditedImage];
     _profileImageURL = (NSURL *)[info valueForKey:UIImagePickerControllerReferenceURL];
-    _profileImageView.image = [self makeRoundImage:[self resizeImage:chosenImage]];
-    [picker dismissViewControllerAnimated:YES completion:NULL];
+    _profileImageView.image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:chosenImage]];
+    
+    [picker dismissViewControllerAnimated:YES completion:nil];
 }
 
 #pragma mark - imagePickerControllerDidCancel
@@ -296,6 +317,13 @@
 #pragma mark - dismissKeyboard
 
 - (void)dismissKeyboard:(id)sender {
+    
+    [self dismisKeyboard];
+}
+
+#pragma mark - dismissKeyboard
+
+- (void)dismisKeyboard {
     
     [_firstNameTextField resignFirstResponder];
     [_lastNameTextField resignFirstResponder];
@@ -396,117 +424,6 @@
         [_containScrollView layoutIfNeeded];
         _containScrollView.contentSize = _containScrollView.frame.size;
     }
-}
-
-#pragma mark - checkPermissionPhoto
-
-- (void)checkPermissionPhoto:(void(^)(NSString *))completion {
-    
-    dispatch_async(_photoPermissionQueue, ^ {
-        
-        PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatus];
-        
-        if (status == PHAuthorizationStatusAuthorized) {
-            
-            // Access has been granted.
-            dispatch_async(dispatch_get_main_queue(), ^ {
-                
-                completion(nil);
-            });
-        } else if (status == PHAuthorizationStatusDenied) {
-            
-            // Access has been denied.
-            dispatch_async(dispatch_get_main_queue(), ^ {
-                
-                completion(@"PHAuthorizationStatusDenied");
-            });
-        } else if (status == PHAuthorizationStatusNotDetermined) {
-            
-            // Access has not been determined.
-            [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
-                
-                if (status == PHAuthorizationStatusAuthorized) {
-                    // Access has been granted.
-                    dispatch_async(dispatch_get_main_queue(), ^ {
-                        
-                        completion(nil);
-                    });
-                } else {
-                    // Access has been denied.
-                    dispatch_async(dispatch_get_main_queue(), ^ {
-                        
-                        completion(@"PHAuthorizationStatusDenied");
-                    });
-                }
-            }];
-        } else if (status == PHAuthorizationStatusRestricted) {
-            
-            dispatch_async(dispatch_get_main_queue(), ^ {
-                
-                completion(@"PHAuthorizationStatusRestricted");
-            });
-        }
-    });
-}
-
-#pragma mark - draw image circle
-
-- (UIImage *)makeRoundImage:(UIImage *)image {
-    
-    // Resize image
-    image = [self resizeImage:image];
-    CGFloat imageWidth = image.size.width;
-    CGRect rect = CGRectMake(0, 0, imageWidth, imageWidth);
-    
-    // Begin ImageContext
-    UIGraphicsBeginImageContext(rect.size);
-    
-    // Add a clip before drawing anything, in the shape of an rounded rect
-    [[UIBezierPath bezierPathWithRoundedRect:rect cornerRadius:imageWidth/2] addClip];
-    [image drawInRect:rect];
-    UIImage* imageCircle = UIGraphicsGetImageFromCurrentImageContext();
-    
-    // End ImageContext
-    UIGraphicsEndImageContext();
-    
-    return imageCircle;
-}
-
-#pragma mark - resize image
-
-- (UIImage *)resizeImage:(UIImage *)image {
-    
-    CGAffineTransform scaleTransform;
-    CGPoint origin;
-    CGFloat edgeSquare = 100;
-    CGFloat imageWidth = image.size.width;
-    CGFloat imageHeight = image.size.height;
-    
-    if (imageWidth > imageHeight) {
-        
-        CGFloat scaleRatio = edgeSquare / imageHeight;
-        scaleTransform = CGAffineTransformMakeScale(scaleRatio, scaleRatio);
-        origin = CGPointMake(-(imageWidth - imageHeight) / 2, 0);
-    } else {
-        
-        CGFloat scaleRatio = edgeSquare / imageWidth;
-        scaleTransform = CGAffineTransformMakeScale(scaleRatio, scaleRatio);
-        origin = CGPointMake(0, -(imageHeight - imageWidth) / 2);
-    }
-    
-    CGSize size = CGSizeMake(edgeSquare, edgeSquare);
-    
-    // Begin ImageContext
-    UIGraphicsBeginImageContext(size);
-    
-    CGContextRef context = UIGraphicsGetCurrentContext();
-    CGContextConcatCTM(context, scaleTransform);
-    [image drawAtPoint:origin];
-    
-    image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    
-    return image;
 }
 
 @end

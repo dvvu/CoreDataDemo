@@ -55,6 +55,7 @@
 		EA2571381F70BF43007752BA /* ContactEntity.m in Sources */ = {isa = PBXBuildFile; fileRef = EA2571371F70BF43007752BA /* ContactEntity.m */; };
 		EA25713D1F70CC78007752BA /* ContactEntities+CoreDataClass.m in Sources */ = {isa = PBXBuildFile; fileRef = EA25713A1F70CC78007752BA /* ContactEntities+CoreDataClass.m */; };
 		EA25713E1F70CC78007752BA /* ContactEntities+CoreDataProperties.m in Sources */ = {isa = PBXBuildFile; fileRef = EA25713C1F70CC78007752BA /* ContactEntities+CoreDataProperties.m */; };
+		EAD583A71F728CC200D2592F /* ImageSupporter.m in Sources */ = {isa = PBXBuildFile; fileRef = EAD583A61F728CC200D2592F /* ImageSupporter.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -172,6 +173,8 @@
 		EA25713A1F70CC78007752BA /* ContactEntities+CoreDataClass.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "ContactEntities+CoreDataClass.m"; sourceTree = "<group>"; };
 		EA25713B1F70CC78007752BA /* ContactEntities+CoreDataProperties.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "ContactEntities+CoreDataProperties.h"; sourceTree = "<group>"; };
 		EA25713C1F70CC78007752BA /* ContactEntities+CoreDataProperties.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "ContactEntities+CoreDataProperties.m"; sourceTree = "<group>"; };
+		EAD583A51F728CC200D2592F /* ImageSupporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImageSupporter.h; sourceTree = "<group>"; };
+		EAD583A61F728CC200D2592F /* ImageSupporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImageSupporter.m; sourceTree = "<group>"; };
 		FBB38B3A232CFA6009ABB6A6 /* Pods_CoreDataDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CoreDataDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -234,6 +237,7 @@
 		EA2570901F70BA0D007752BA /* CoreDataDemo */ = {
 			isa = PBXGroup;
 			children = (
+				EAD583A41F728C7800D2592F /* imageSupporter */,
 				EA2570BD1F70BA37007752BA /* Nimbus */,
 				EA2571251F70BB7A007752BA /* ContactCells */,
 				EA25713F1F710C93007752BA /* ContactEntities+CoreDataProperties */,
@@ -417,6 +421,15 @@
 			name = "ContactEntities+CoreDataProperties";
 			sourceTree = "<group>";
 		};
+		EAD583A41F728C7800D2592F /* imageSupporter */ = {
+			isa = PBXGroup;
+			children = (
+				EAD583A51F728CC200D2592F /* ImageSupporter.h */,
+				EAD583A61F728CC200D2592F /* ImageSupporter.m */,
+			);
+			name = imageSupporter;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -581,6 +594,7 @@
 				EA25711A1F70BA95007752BA /* NIMutableTableViewModel.m in Sources */,
 				EA2570F71F70BA7F007752BA /* NISDKAvailability.m in Sources */,
 				EA25712A1F70BB84007752BA /* ContactTableViewCell.m in Sources */,
+				EAD583A71F728CC200D2592F /* ImageSupporter.m in Sources */,
 				EA25711F1F70BA95007752BA /* NITableViewModel.m in Sources */,
 				EA2570BC1F70BA2C007752BA /* ThreadSafeForMutableArray.m in Sources */,
 				EA2570F61F70BA7F007752BA /* NIRuntimeClassModifications.m in Sources */,

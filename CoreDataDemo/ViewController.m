@@ -14,6 +14,7 @@
 #import "ContactTableViewCell.h"
 #import "CoreData/CoreData.h"
 #import "ViewController.h"
+#import "ImageSupporter.h"
 #import "ContactCache.h"
 #import "NimbusModels.h"
 #import "NimbusCore.h"
@@ -29,6 +30,7 @@
 @property (nonatomic) UISearchController* searchController;
 @property (nonatomic) NIMutableTableViewModel* model;
 @property (nonatomic) dispatch_queue_t contactQueue;
+@property (nonatomic) NSDictionary* cellObjects;
 @property (nonatomic) UITableView* tableView;
 
 @end
@@ -44,6 +46,7 @@
     [self createSearchController];
     [self setupTableMode];
     [self setupData];
+    [self storeImagetoCahes];
 }
 
 #pragma mark - setupLayout
@@ -67,10 +70,10 @@
 
 - (void)setupTableMode {
     
+    _contactEntites = [[NSArray alloc] init];
     _contactQueue = dispatch_queue_create("CONTACT_QUEUE", DISPATCH_QUEUE_SERIAL);
-    
     _contactsStoreManager = [ContactsStoreManager sharedInstance];
-    [_contactsStoreManager initializeCoreDataURLForResource:@"" andNameTable:@""];
+    [_contactsStoreManager initializeCoreDataURLForResource:@"CoreDataDemo" andNameTable:CONTACTENTITIES];
 //    [_contactsStoreManager clearCoreData:CONTACTENTITIES];
     [_tableView registerClass:[ContactTableViewCell class] forCellReuseIdentifier:@"ContactTableViewCell"];
     _tableView.delegate = self;
@@ -89,97 +92,114 @@
     }
 }
 
+#pragma mark - storeImagetoCahes
+
+- (void)storeImagetoCahes {
+    
+    _contactEntites = [_contactsStoreManager getObjectsFromTable:CONTACTENTITIES];
+    
+    [_contactEntites enumerateObjectsUsingBlock:^(ContactEntities* _Nonnull obj, NSUInteger idx, BOOL* _Nonnull stop) {
+       
+        [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[obj profileImageURL]] completion:^(UIImage* image) {
+            
+            if (image) {
+                
+                image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:image]];
+                ContactCellObject* cellObject = _cellObjects[[obj identifier]];
+                NSIndexPath* indexPath = [_model indexPathForObject:cellObject];
+                __weak ContactTableViewCell* cell = [_tableView cellForRowAtIndexPath:indexPath];
+                cell.profileImageView.image = image;
+                
+                [[ContactCache sharedInstance] setImageForKey:image forKey:[obj identifier]];
+            }
+        }];
+    }];
+}
+
 #pragma mark - setupData
 
 - (void)setupData {
     
     dispatch_async(_contactQueue, ^ {
         
-        _contactEntites = [[NSArray alloc] init];
         _model = [[NIMutableTableViewModel alloc] initWithDelegate:self];
         _contactEntites = [_contactsStoreManager getObjectsFromTable:CONTACTENTITIES];
         
-        int contacts = (int)_contactEntites.count;
+        __block NSString* groupNameContact = @"";
         
-        if (contacts > 0) {
+        [_contactEntites enumerateObjectsUsingBlock:^(ContactEntities* _Nonnull contactEntity, NSUInteger idx, BOOL * _Nonnull stop) {
             
-            NSString* groupNameContact = @"";
+            NSString* nameString = [NSString stringWithFormat:@"%@ %@",contactEntity.firstName, contactEntity.lastName];
+            NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            NSString* firstChar = @"";
             
-            // Run on background to get name group
-            for (int i = 0; i < contacts; i++) {
+            if ([name length] > 0) {
                 
-                ContactEntities* contactEntity = [_contactEntites objectAtIndex:i];
-                NSString* nameString = [NSString stringWithFormat:@"%@ %@",contactEntity.firstName, contactEntity.lastName];
-                NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-                NSString* firstChar = @"";
+                firstChar = [name substringToIndex:1];
+            } else {
                 
-                if ([name length] > 0) {
-                    
-                    firstChar = [name substringToIndex:1];
-                } else {
-                    
-                    firstChar = [contactEntity.phoneNumber substringToIndex:1];
-                }
-                
-                if ([groupNameContact.uppercaseString rangeOfString:firstChar.uppercaseString].location == NSNotFound) {
-                    
-                    groupNameContact = [groupNameContact stringByAppendingString:firstChar.uppercaseString];
-                }
+                firstChar = [contactEntity.phoneNumber substringToIndex:1];
             }
             
-            int characterGroupNameCount = (int)[groupNameContact length];
+            if ([groupNameContact.uppercaseString rangeOfString:firstChar.uppercaseString].location == NSNotFound) {
+                
+                groupNameContact = [groupNameContact stringByAppendingString:firstChar.uppercaseString];
+            }
+        }];
+        
+        int characterGroupNameCount = (int)[groupNameContact length];
+        NSMutableDictionary* objectsDict = [[NSMutableDictionary alloc] init];
+        
+        [_contactEntites enumerateObjectsUsingBlock:^(ContactEntities* _Nonnull contactEntity, NSUInteger idx, BOOL * _Nonnull stop) {
             
-            // Run on background to get object
-            for (int i = 0; i < contacts; i++) {
+            if (idx < characterGroupNameCount) {
                 
-                if (i < characterGroupNameCount) {
-                    
-                    [_model addSectionWithTitle:[groupNameContact substringWithRange:NSMakeRange(i,1)].uppercaseString];
-                }
-                
-                ContactEntities* contactEntity = [_contactEntites objectAtIndex:i];
-
-                NSString* nameString = [NSString stringWithFormat:@"%@ %@",contactEntity.firstName ? contactEntity.firstName:@"", contactEntity.lastName ? contactEntity.lastName:@""];
-                NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-                NSString* firstChar = @"";
-                
-                if ([name length] > 0) {
-                    
-                    firstChar = [name substringToIndex:1];
-                } else {
-                    
-                    firstChar = [contactEntity.phoneNumber substringToIndex:1];
-                }
-                
-                NSRange range = [groupNameContact rangeOfString:firstChar.uppercaseString];
-                
-                if (range.location != NSNotFound) {
-                    
-                    ContactCellObject* cellObject = [[ContactCellObject alloc] init];
-                    
-                    cellObject.firstName = [contactEntity firstName] ? [contactEntity firstName] : @"";
-                    cellObject.lastName = [contactEntity lastName] ? [contactEntity lastName] : @"";
-                    cellObject.identifier = [contactEntity identifier];
-                    cellObject.phoneNumber = [contactEntity phoneNumber];
-                    cellObject.company = [contactEntity company];
-                    NSLog(@"i: %@",cellObject.identifier);
-                    
-                    NSString* lastChar = @"";
-                    
-                    if ([cellObject.lastName length] > 0) {
-                        
-                        lastChar = [cellObject.lastName substringToIndex:1];
-                    }
-                    
-                    NSString* nameDefault = [NSString stringWithFormat:@"%@%@",firstChar,lastChar];
-                    cellObject.contactImage = [ViewController profileImageDefault:nameDefault];
-                    [_model addObject:cellObject toSection:range.location];
-                }
+                [_model addSectionWithTitle:[groupNameContact substringWithRange:NSMakeRange(idx,1)].uppercaseString];
             }
             
-            [_model updateSectionIndex];
-        }
+            NSString* nameString = [NSString stringWithFormat:@"%@ %@",contactEntity.firstName ? contactEntity.firstName:@"", contactEntity.lastName ? contactEntity.lastName:@""];
+            NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            NSString* firstChar = @"";
+            
+            if ([name length] > 0) {
+                
+                firstChar = [name substringToIndex:1];
+            } else {
+                
+                firstChar = [contactEntity.phoneNumber substringToIndex:1];
+            }
+            
+            NSRange range = [groupNameContact rangeOfString:firstChar.uppercaseString];
+            
+            if (range.location != NSNotFound) {
+                
+                ContactCellObject* cellObject = [[ContactCellObject alloc] init];
+                
+                cellObject.firstName = [contactEntity firstName] ? [contactEntity firstName] : @"";
+                cellObject.lastName = [contactEntity lastName] ? [contactEntity lastName] : @"";
+                cellObject.identifier = [contactEntity identifier];
+                cellObject.phoneNumber = [contactEntity phoneNumber];
+                cellObject.company = [contactEntity company];
+                cellObject.profileImageURL = [contactEntity profileImageURL];
+                NSLog(@"i: %@",cellObject.identifier);
+                
+                NSString* lastChar = @"";
+                
+                if ([cellObject.lastName length] > 0) {
+                    
+                    lastChar = [cellObject.lastName substringToIndex:1];
+                }
+                
+                NSString* nameDefault = [NSString stringWithFormat:@"%@%@",firstChar,lastChar];
+                cellObject.contactImage = [[ImageSupporter sharedInstance] profileImageDefault:nameDefault];
+                
+                 objectsDict[cellObject.identifier] = cellObject;
+                [_model addObject:cellObject toSection:range.location];
+            }
+        }];
         
+        _cellObjects = objectsDict;
+        [_model updateSectionIndex];
         _tableView.dataSource = _model;
         
         // Run on main Thread
@@ -331,57 +351,6 @@
     UITableViewHeaderFooterView* header = (UITableViewHeaderFooterView *)view;
     header.textLabel.textColor = [UIColor grayColor];
     header.textLabel.font = [UIFont fontWithName:@"Helvetica-Bold" size:14];
-}
-
-#pragma mark - profileImageDefault
-
-+ (UIImage *)profileImageDefault:(NSString *)textNameDefault {
-    
-    // Size image
-    int imageWidth = 100;
-    int imageHeight =  100;
-    
-    // Rect for image
-    CGRect rect = CGRectMake(0,0,imageHeight,imageHeight);
-    
-    // setup text
-    UIFont* font = [UIFont systemFontOfSize: 50];
-    CGSize textSize = [textNameDefault.uppercaseString sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:50]}];
-    NSMutableAttributedString* nameAttString = [[NSMutableAttributedString alloc] initWithString:textNameDefault.uppercaseString];
-    NSRange range = NSMakeRange(0, [nameAttString length]);
-    [nameAttString addAttribute:NSFontAttributeName value:font range:range];
-    [nameAttString addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:range];
-    
-    // Create image
-    CGSize imageSize = CGSizeMake(imageWidth, imageHeight);
-    UIColor* fillColor = [UIColor lightGrayColor];
-    
-    // Begin ImageContext Options
-    UIGraphicsBeginImageContextWithOptions(imageSize, YES, 0);
-    
-    CGContextRef context = UIGraphicsGetCurrentContext();
-    [fillColor setFill];
-    CGContextFillRect(context, CGRectMake(0, 0, imageSize.width, imageSize.height));
-    UIImage* image = UIGraphicsGetImageFromCurrentImageContext();
-    
-    // Begin ImageContext
-    UIGraphicsBeginImageContext(rect.size);
-    
-    //  Draw Circle image
-    [[UIBezierPath bezierPathWithRoundedRect:rect cornerRadius:imageWidth/2] addClip];
-    [image drawInRect:rect];
-    
-    // Draw text
-    [nameAttString drawInRect:CGRectIntegral(CGRectMake(imageWidth/2 - textSize.width/2, imageHeight/2 - textSize.height/2, imageWidth, imageHeight))];
-    UIImage* profileImageDefault = UIGraphicsGetImageFromCurrentImageContext();
-    
-    // End ImageContext
-    UIGraphicsEndImageContext();
-    
-    // End ImageContext Options
-    UIGraphicsEndImageContext();
-    
-    return profileImageDefault;
 }
 
 @end

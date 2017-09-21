@@ -61,39 +61,42 @@
     if (image && key) {
         
         dispatch_barrier_async(_cacheImageQueue, ^ {
-               
+            
             // Add key into keyList
             [_keyList addObject:key];
-            
-            // Get size of image
-            UIImage* circleImage = [self makeRoundImage:image];
-            CGFloat pixelImage = [self imageSize:circleImage];
-            
-            // Add size to check condition
-            _totalPixel += pixelImage;
-            
-            NSLog(@"%lu",(unsigned long)_totalPixel);
-            
-            // size of image < valid memory?
-            if (pixelImage < MAX_ITEM_SIZE) {
-              
-                int index = 0;
-                while (_totalPixel > _maxCacheSize) {
+
+            [self removeImageForKey:key completionWith:^ {
+                
+                // Get size of image
+                UIImage* circleImage = [self makeRoundImage:image];
+                CGFloat pixelImage = [self imageSize:circleImage];
+                
+                // Add size to check condition
+                _totalPixel += pixelImage;
+                
+                NSLog(@"%lu",(unsigned long)_totalPixel);
+                
+                // size of image < valid memory?
+                if (pixelImage < MAX_ITEM_SIZE) {
                     
-                    CGFloat size =  [self imageSize:[_contactCache objectForKey:[_keyList objectAtIndex:index]]];
-                    [_contactCache removeObjectForKey:[_keyList objectAtIndex:index]];
-                    _totalPixel -= size;
-                    index++;
+                    int index = 0;
+                    while (_totalPixel > _maxCacheSize) {
+                        
+                        CGFloat size =  [self imageSize:[_contactCache objectForKey:[_keyList objectAtIndex:index]]];
+                        [_contactCache removeObjectForKey:[_keyList objectAtIndex:index]];
+                        _totalPixel -= size;
+                        index++;
+                    }
+                    
+                    [_contactCache setObject:circleImage forKey:key];
+                    //[self writeToDirectory:[self makeRoundImage:image] forkey:key];
+                    
+                } else if (pixelImage == _maxCacheSize) {
+                    
+                    [_contactCache removeAllObjects];
+                    [_contactCache setObject:circleImage forKey:key];
                 }
-                
-                [_contactCache setObject:circleImage forKey:key];
-                //[self writeToDirectory:[self makeRoundImage:image] forkey:key];
-                
-            } else if (pixelImage == _maxCacheSize) {
-                
-                [_contactCache removeAllObjects];
-                [_contactCache setObject:circleImage forKey:key];
-            }
+            }];
         });
     }
 }

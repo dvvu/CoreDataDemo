@@ -35,7 +35,7 @@
 - (void)initializeCoreDataURLForResource:(NSString *)urlForResource andNameTable:(NSString *)tableName {
     
     // Lấy đường dẫn Resource.
-    NSURL* modelURL = [[NSBundle mainBundle] URLForResource:@"CoreDataDemo" withExtension:@"momd"];
+    NSURL* modelURL = [[NSBundle mainBundle] URLForResource:urlForResource withExtension:@"momd"];
     // Khởi tạo đối tượng Model lên theo url resource -> Đối tượng lưu lại Model.
     
     NSManagedObjectModel* managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
@@ -57,7 +57,7 @@
     NSURL* documentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
     
     // Tạo đường dẫn đích đến file , tạo file infor null.
-    NSURL* storeURL = [documentsURL URLByAppendingPathComponent:@"ContactEntities.sqlite"];
+    NSURL* storeURL = [documentsURL URLByAppendingPathComponent:[NSString stringWithFormat:@"%@%@",tableName,@".sqlite"]];
     
     NSError* error = nil;
     //NSPersistentStoreCoordinator lớp gộp sử dụng NSPersistentStore-> đối tượng thông tin lưu trữ model, để lưu trữ theo kiểu type nào, Tên file, Đưa ra lỗi khi lưu, cấu hình bổ xung cho file sqite, options tuỳ chọn khác. khác vs sqlite chỉ copy bởi vì ở đây resource lưu model.
@@ -83,7 +83,6 @@
 //    object = [NSEntityDescription insertNewObjectForEntityForName:tableName inManagedObjectContext:_managedObjectContext];
     NSError* error = nil;
     
-    // Lưu không thành công thì trả về mô tả về lỗi đó!.
     if ([_managedObjectContext save:&error] == NO) {
       
         NSLog(@"Error saving context %@\n%@",[error localizedDescription],[error userInfo]);
@@ -94,19 +93,18 @@
 
 - (void)deleteObject:(NSManagedObject *)object fromTable:(NSString *)tableName {
     
-    // trả về số lượng phần tử trong mảng results.
     NSArray* results = [self getObjectsFromTable:tableName];
         
     for (ContactEntities* result in results) {
 
-        ContactEntities* ob = (ContactEntities *)object;
+        ContactEntities* entity = (ContactEntities *)object;
         
-        if ([result identifier] == [ob identifier]) {
+        if ([result identifier] == [entity identifier]) {
             
             [_managedObjectContext deleteObject:result];
         }
     }
-    // save context khi đã chỉnh sửa bản ghi
+
     NSError* error = nil;
     
     if ([_managedObjectContext save:&error] == NO) {
@@ -119,7 +117,6 @@
 
 - (void)updateObjec:(NSManagedObject *)object atTable:(NSString *)tableName {
     
-    // Tạo một đối tượng  FetchRequest để đọc thông tin Entity Student.
     NSArray* results = [self getObjectsFromTable:tableName];
   
     for (ContactEntities* result in results) {
@@ -130,9 +127,10 @@
             result.lastName = [(ContactEntities *)object lastName];
             result.phoneNumber = [(ContactEntities *)object phoneNumber];
             result.company = [(ContactEntities *)object company];
+            result.profileImageURL = [(ContactEntities *)object profileImageURL];
         }
     }
-    // save context khi đã chỉnh sửa bản ghi
+   
     NSError* error = nil;
     
     if ([_managedObjectContext save:&error] == NO) {
@@ -147,12 +145,10 @@
     
     NSFetchRequest* request = [NSFetchRequest fetchRequestWithEntityName:tableName];
     NSError* error = nil;
+    [request setSortDescriptors:@[[[NSSortDescriptor alloc] initWithKey:@"firstName" ascending:YES]]];
     
-    [request setSortDescriptors:@[[[NSSortDescriptor alloc] initWithKey:@"lastName" ascending:YES]]];
-    // Truy vấn trả về mảng đối tượng lưu trong results.
     NSArray* results = [_managedObjectContext executeFetchRequest:request error:&error];
 
-    // không có bản ghi thì trả vể error.
     if (!results) {
         
         NSLog(@"Error fetching Student object %@\n%@",[error localizedDescription],[error userInfo]);
@@ -166,14 +162,13 @@
 
 - (void)clearCoreData:(NSString *)tableName {
     
-    // trả về số lượng phần tử trong mảng results.
     NSArray* results = [self getObjectsFromTable:tableName];
     
     for (NSManagedObject* result in results) {
         
         [_managedObjectContext deleteObject:result];
     }
-    // save context khi đã chỉnh sửa bản ghi
+
     NSError* error = nil;
     
     if ([_managedObjectContext save:&error] == NO) {

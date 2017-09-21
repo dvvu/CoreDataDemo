@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (NSFetchRequest<ContactEntities *> *)fetchRequest;
 
+@property (nullable, nonatomic, copy) NSString* profileImageURL;
 @property (nullable, nonatomic, copy) NSString* identifier;
 @property (nullable, nonatomic, copy) NSString* phoneNumber;
 @property (nullable, nonatomic, copy) NSString* company;

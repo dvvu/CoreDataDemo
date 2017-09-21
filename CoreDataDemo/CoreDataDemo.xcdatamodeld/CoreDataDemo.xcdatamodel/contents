@@ -6,8 +6,9 @@
         <attribute name="identifier" optional="YES" attributeType="String" indexed="YES" spotlightIndexingEnabled="YES" syncable="YES"/>
         <attribute name="lastName" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="phoneNumber" attributeType="String" syncable="YES"/>
+        <attribute name="profileImageURL" optional="YES" attributeType="String" syncable="YES"/>
     </entity>
     <elements>
-        <element name="ContactEntities" positionX="-3339" positionY="-747" width="128" height="120"/>
+        <element name="ContactEntities" positionX="-3339" positionY="-747" width="128" height="135"/>
     </elements>
 </model>

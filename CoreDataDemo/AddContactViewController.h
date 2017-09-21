@@ -12,9 +12,6 @@
 
 @interface AddContactViewController : UIViewController
 
-#pragma mark - singleton
-+ (instancetype)sharedInstance;
-
 #pragma mark - prepareData
 @property (nonatomic) ContactEntities* contactEntities;
 

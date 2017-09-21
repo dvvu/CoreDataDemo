@@ -14,6 +14,7 @@
 	return [[NSFetchRequest alloc] initWithEntityName:@"ContactEntities"];
 }
 
+@dynamic profileImageURL;
 @dynamic identifier;
 @dynamic phoneNumber;
 @dynamic company;
