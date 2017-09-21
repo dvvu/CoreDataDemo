@@ -21,24 +21,19 @@
     
     __weak ContactTableViewCell* contactTableViewCell = (ContactTableViewCell *)cell;
     
-    dispatch_async(dispatch_get_main_queue(), ^ {
+    [[ContactCache sharedInstance] getImageForKey:_identifier completionWith:^(UIImage* image) {
         
-        contactTableViewCell.profileImageView.image = [ZLMImageCache.sharedInstance imageFromKey:_identifier storeToMem:YES];
-    });
-    
-//    [[ContactCache sharedInstance] getImageForKey:_identifier completionWith:^(UIImage* image) {
-//        
-//        if (image) {
-//            
-//            if ([_identifier isEqualToString:contactTableViewCell.identifier]) {
-//                
-//                dispatch_async(dispatch_get_main_queue(), ^ {
-//                    
-//                    contactTableViewCell.profileImageView.image = image;
-//                });
-//            }
-//        }
-//    }];
+        if (image) {
+            
+            if ([_identifier isEqualToString:contactTableViewCell.identifier]) {
+                
+                dispatch_async(dispatch_get_main_queue(), ^ {
+                    
+                    contactTableViewCell.profileImageView.image = image;
+                });
+            }
+        }
+    }];
 }
 
 @end

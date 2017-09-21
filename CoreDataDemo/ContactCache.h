@@ -22,4 +22,6 @@
 
 #pragma mark - removeImageForKey
 - (void)removeImageForKey:(NSString *)key completionWith:(void(^)())completion;
+
+- (void)reduceMemory;
 @end

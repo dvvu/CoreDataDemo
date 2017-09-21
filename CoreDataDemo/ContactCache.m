@@ -13,8 +13,8 @@
 @interface ContactCache()
 
 @property (nonatomic) ThreadSafeForMutableArray* keyList;
+@property (nonatomic) NSMutableDictionary* contactCache;
 @property (nonatomic) dispatch_queue_t cacheImageQueue;
-@property (nonatomic) NSCache* contactCache;
 @property (nonatomic) NSUInteger maxCacheSize;
 @property (nonatomic) NSUInteger totalPixel;
 
@@ -47,10 +47,8 @@
         
         _maxCacheSize = MAX_CACHE_SIZE;
         _keyList = [[ThreadSafeForMutableArray alloc]init];
-        _contactCache = [[NSCache alloc] init];
-        [_contactCache setEvictsObjectsWithDiscardedContent:YES];
+        _contactCache = [[NSMutableDictionary alloc] init];
         _cacheImageQueue = dispatch_queue_create("CACHE_IMAGE_QUEUE", DISPATCH_QUEUE_CONCURRENT);
-        [_contactCache setName:@"ContactImage"];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(removeAllObjects) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
     }
@@ -247,6 +245,11 @@
     UIGraphicsEndImageContext();
     
     return image;
+}
+
+- (void)reduceMemory {
+    
+    [_contactCache removeAllObjects];
 }
 
 @end

@@ -36,8 +36,8 @@
     
     // Lấy đường dẫn Resource.
     NSURL* modelURL = [[NSBundle mainBundle] URLForResource:urlForResource withExtension:@"momd"];
+  
     // Khởi tạo đối tượng Model lên theo url resource -> Đối tượng lưu lại Model.
-    
     NSManagedObjectModel* managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
    
     // Có thể sinh ra lỗi như sai tên file or đuôi file.

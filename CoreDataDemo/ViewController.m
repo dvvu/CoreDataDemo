@@ -117,8 +117,7 @@
                         __weak ContactTableViewCell* cell = [_tableView cellForRowAtIndexPath:indexPath];
                         cell.profileImageView.image = image;
                         
-                        [ZLMImageCache.sharedInstance storeImage:image withKey:[obj identifier]];
-//                        [[ContactCache sharedInstance] setImageForKey:image forKey:[obj identifier]];
+                        [[ContactCache sharedInstance] setImageForKey:image forKey:[obj identifier]];
                     }
                 }];
             }

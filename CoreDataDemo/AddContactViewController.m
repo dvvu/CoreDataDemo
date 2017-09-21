@@ -191,14 +191,13 @@
         
         if ([_contactEntities profileImageURL]) {
             
-            _profileImageView.image = [ZLMImageCache.sharedInstance imageFromKey:[_contactEntities identifier] storeToMem:YES];
-//            [[ContactCache sharedInstance] getImageForKey:[_contactEntities identifier] completionWith:^(UIImage* image) {
-//                
-//                if (image) {
-//                    
-//                    _profileImageView.image = image;
-//                }
-//            }];
+            [[ContactCache sharedInstance] getImageForKey:[_contactEntities identifier] completionWith:^(UIImage* image) {
+                
+                if (image) {
+                    
+                    _profileImageView.image = image;
+                }
+            }];
         }
     }
 }
@@ -247,9 +246,7 @@
                 
                 if (image) {
                     
-                    image = [[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]];
-                    [ZLMImageCache.sharedInstance storeImage:image withKey:[_contactEntities identifier]];
-//                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:[_contactEntities identifier]] ;
+                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:[_contactEntities identifier]];
                 }
             }];
         }
@@ -272,9 +269,7 @@
                 
                 if (image) {
                     
-                    image = [[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]];
-                    [ZLMImageCache.sharedInstance storeImage:image withKey:[_contactEntities identifier]];
-//                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:contactEntities.identifier] ;
+                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:contactEntities.identifier];
                 }
             }];
         }

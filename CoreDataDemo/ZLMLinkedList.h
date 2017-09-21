@@ -11,15 +11,16 @@
 typedef struct LNode LNode;
 
 struct LNode {
+    
     __unsafe_unretained id obj;
-    LNode *next;
-    LNode *prev;
+    LNode* next;
+    LNode* prev;
 };
 
 @interface ZLMLinkedList : NSObject {
 
-    LNode *first;
-    LNode *last;
+    LNode* first;
+    LNode* last;
 
     unsigned int size;
 }
@@ -68,11 +69,9 @@ struct LNode {
 - (void)prependObject:(id)anObject;
 - (void)appendObject:(id)anObject;
 
-@property (readonly) LNode *first;
-@property (readonly) LNode *last;
+@property (readonly) LNode* first;
+@property (readonly) LNode* last;
 
 @end
 
-
-
-LNode * LNodeMake(id obj, LNode *next, LNode *prev);    // convenience method for creating a LNode
+LNode* LNodeMake(id obj, LNode* next, LNode* prev);    // convenience method for creating a LNode

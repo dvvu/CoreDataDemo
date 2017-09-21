@@ -36,7 +36,6 @@
 @implementation ZLMLinkedList
 @synthesize first, last;
 
-
 - (id)init {
 
     if ((self = [super init]) == nil) return nil;
@@ -47,18 +46,17 @@
     return self;
 }
 
-
 + (id)listWithObject:(id)anObject {
+    
     ZLMLinkedList *n = [[ZLMLinkedList alloc] initWithObject:anObject];
     return SAFE_ARC_AUTORELEASE(n);
 }
-
 
 - (id)initWithObject:(id)anObject {
 
     if ((self = [super init]) == nil) return nil;
 
-    LNode *n = LNodeMake(anObject, nil, nil);
+    LNode* n = LNodeMake(anObject, nil, nil);
 
     first = last = n;
     size = 1;
@@ -66,38 +64,38 @@
     return self;
 }
 
-
 - (void)pushBack:(id)anObject {
 
     if (anObject == nil) return;
 
-    LNode *n = LNodeMake(anObject, nil, last);
+    LNode* n = LNodeMake(anObject, nil, last);
 
     if (size == 0) {
+        
         first = last = n;
     } else {
+        
         last->next = n;
         last = n;
     }
 
     size++;
-
 }
 
-
 - (id)lastObject {
+    
     return last ? last->obj : nil;
 }
 
-
 - (id)firstObject {
+    
     return first ? first->obj : nil;
 }
-
 
 - (id)secondLastObject {
 
     if (last && last->prev) {
+        
         return last->prev->obj;
     }
 
@@ -105,21 +103,20 @@
 
 }
 
-
 - (LNode *)firstNode {
+    
     return first;
 }
 
-
 - (LNode *)lastNode {
+    
     return last;
 }
 
-
 - (id)top {
+    
     return [self lastObject];
 }
-
 
 - (void)pushFront:(id)anObject {
 
@@ -128,91 +125,95 @@
     LNode *n = LNodeMake(anObject, first, nil);
 
     if (size == 0) {
+        
         first = last = n;
     } else {
+        
         first->prev = n;
         first = n;
     }
 
     size++;
-
 }
 
-
 - (void)prependObject:(id)anObject {
+    
     [self pushFront:anObject];
 }
 
-
 - (void)appendObject:(id)anObject {
+    
     [self pushBack:anObject];
 }
 
-
 - (void)insertObject:(id)anObject beforeNode:(LNode *)node {
+    
     [self insertObject:anObject betweenNode:node->prev andNode:node];
 }
 
 
 - (void)insertObject:(id)anObject afterNode:(LNode *)node {
+    
     [self insertObject:anObject betweenNode:node andNode:node->next];
 }
-
 
 - (void)insertObject:(id)anObject betweenNode:(LNode *)previousNode andNode:(LNode *)nextNode {
 
     if (anObject == nil) return;
 
-    LNode *n = LNodeMake(anObject, nextNode, previousNode);
+    LNode* n = LNodeMake(anObject, nextNode, previousNode);
 
     if (previousNode) {
+        
         previousNode->next = n;
     } else {
+        
         first = n;
     }
 
     if (nextNode) {
+        
         nextNode->prev = n;
     } else {
+        
         last = n;
     }
 
     size++;
-
 }
-
 
 - (void)addObject:(id)anObject {
+    
     [self pushBack:anObject];
 }
-
 
 - (void)pushNodeBack:(LNode *)n {
 
     if (size == 0) {
+        
         first = last = LNodeMake(n->obj, nil, nil);
     } else {
+        
         last->next = LNodeMake(n->obj, nil, last);
         last = last->next;
     }
 
     size++;
-
 }
-
 
 - (void)pushNodeFront:(LNode *)n {
 
     if (size == 0) {
+        
         first = last = LNodeMake(n->obj, nil, nil);
     } else {
+        
         first->prev = LNodeMake(n->obj, first, nil);
         first = first->prev;
     }
 
     size++;
 }
-
 
 // With support for negative indexing!
 - (id)objectAtIndex:(const int)inidx {
@@ -225,9 +226,10 @@
 
     if (idx >= size || idx < 0) return nil;
 
-    LNode *n = nil;
+    LNode* n = nil;
 
     if (idx > (size / 2)) {
+        
         // loop from the back
         int curridx = size - 1;
         for (n = last; idx < curridx; --curridx) n = n->prev;
@@ -240,9 +242,7 @@
     }
 
     return nil;
-
 }
-
 
 - (id)popBack {
 
@@ -254,7 +254,6 @@
 
 }
 
-
 - (id)popFront {
 
     if (size == 0) return nil;
@@ -265,7 +264,6 @@
 
 }
 
-
 - (void)removeNode:(LNode *)aNode {
 
     if (size == 0) return;
@@ -274,14 +272,17 @@
         // delete first and only
         first = last = nil;
     } else if (aNode->prev == nil) {
+        
         // delete first of many
         first = first->next;
         first->prev = nil;
     } else if (aNode->next == nil) {
+        
         // delete last
         last = last->prev;
         last->next = nil;
     } else {
+        
         // delete in the middle
         LNode *tmp = aNode->prev;
         tmp->next = aNode->next;
@@ -293,33 +294,32 @@
     aNode->obj = nil;
     free(aNode);
     size--;
-
-
 }
-
 
 - (BOOL)removeObjectEqualTo:(id)anObject {
 
-    LNode *n = nil;
+    LNode* n = nil;
 
     for (n = first; n; n=n->next) {
+        
         if (n->obj == anObject) {
+            
             [self removeNode:n];
             return YES;
         }
     }
 
     return NO;
-
 }
-
 
 - (void)removeAllObjects {
 
-    LNode *n = first;
+    LNode* n = first;
 
     while (n) {
-        LNode *next = n->next;
+        
+        LNode* next = n->next;
+        
         SAFE_ARC_RELEASE(n->obj);
         n->obj = nil;
         free(n);
@@ -330,79 +330,77 @@
     size = 0;
 }
 
-
 - (void)dumpList {
-    LNode *n = nil;
+    
+    LNode* n = nil;
     for (n = first; n; n=n->next) {
+        
         NSLog(@"%p", n);
     }
 }
 
-
 - (void)insertObject:(id)anObject orderedPositionByKey:(NSString *)key ascending:(BOOL)ascending {
+    
     assert(0); // currently not implemented
 }
-
 
 - (int)count  { return size; }
 - (int)size   { return size; }
 - (int)length { return size; }
 
-
 - (BOOL)containsObject:(id)anObject {
 
-    LNode *n = nil;
+    LNode* n = nil;
 
     for (n = first; n; n=n->next) {
         if (n->obj == anObject) return YES;
     }
 
     return NO;
-
 }
-
 
 - (NSArray *)allObjects {
 
-    NSMutableArray *ret = SAFE_ARC_AUTORELEASE([[NSMutableArray alloc] initWithCapacity:size]);
-    LNode *n = nil;
+    NSMutableArray* ret = SAFE_ARC_AUTORELEASE([[NSMutableArray alloc] initWithCapacity:size]);
+    LNode* n = nil;
 
     for (n = first; n; n=n->next) {
+        
         [ret addObject:n->obj];
     }
 
     return [NSArray arrayWithArray:ret];
 }
-
 
 - (NSArray *)allObjectsReverse {
 
     NSMutableArray *ret = SAFE_ARC_AUTORELEASE([[NSMutableArray alloc] initWithCapacity:size]);
-    LNode *n = nil;
+    LNode* n = nil;
 
     for (n = last; n; n=n->prev) {
+        
         [ret addObject:n->obj];
     }
 
     return [NSArray arrayWithArray:ret];
 }
 
-
 - (void)dealloc {
+    
     [self removeAllObjects];
     SAFE_ARC_SUPER_DEALLOC();
 }
 
-
 - (NSString *)description {
+    
     return [NSString stringWithFormat:@"ZLMLinkedList with %d objects", size];
 }
 
-
 @end
 
-LNode * LNodeMake(id obj, LNode *next, LNode *prev) {
-    LNode *n = malloc(sizeof(LNode));
+LNode * LNodeMake(id obj, LNode* next, LNode* prev) {
+    
+    LNode* n = malloc(sizeof(LNode));
     n->next = next;
     n->prev = prev;
     n->obj = SAFE_ARC_RETAIN(obj);

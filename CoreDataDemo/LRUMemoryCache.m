@@ -17,8 +17,8 @@
 /**
  Dictionary to store objects
  */
-@property (strong, nonatomic) ZLMtsMutableDictionary *storedObjects;
-@property (strong, nonatomic) ZLMLinkedList *lruList;
+@property (strong, nonatomic) ZLMtsMutableDictionary* storedObjects;
+@property (strong, nonatomic) ZLMLinkedList* lruList;
 
 @property NSUInteger currentTotalCost;               // Total cost of all stored object
 @property NSUInteger totalCostThreshold;             // Threshold of total cost
