@@ -48,8 +48,11 @@
         _maxCacheSize = MAX_CACHE_SIZE;
         _keyList = [[ThreadSafeForMutableArray alloc]init];
         _contactCache = [[NSCache alloc] init];
+        [_contactCache setEvictsObjectsWithDiscardedContent:YES];
         _cacheImageQueue = dispatch_queue_create("CACHE_IMAGE_QUEUE", DISPATCH_QUEUE_CONCURRENT);
         [_contactCache setName:@"ContactImage"];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(removeAllObjects) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
     }
     return self;
 }
@@ -89,8 +92,6 @@
                     }
                     
                     [_contactCache setObject:circleImage forKey:key];
-                    //[self writeToDirectory:[self makeRoundImage:image] forkey:key];
-                    
                 } else if (pixelImage == _maxCacheSize) {
                     
                     [_contactCache removeAllObjects];

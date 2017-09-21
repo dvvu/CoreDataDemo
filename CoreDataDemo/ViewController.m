@@ -28,6 +28,7 @@
 @property (nonatomic) NSArray<ContactEntities*>* contactEntites;
 @property (weak, nonatomic) IBOutlet UIView *searchBarView;
 @property (nonatomic) UISearchController* searchController;
+@property (nonatomic) dispatch_queue_t imageCahceQueue;
 @property (nonatomic) NIMutableTableViewModel* model;
 @property (nonatomic) dispatch_queue_t contactQueue;
 @property (nonatomic) NSDictionary* cellObjects;
@@ -72,6 +73,7 @@
     
     _contactEntites = [[NSArray alloc] init];
     _contactQueue = dispatch_queue_create("CONTACT_QUEUE", DISPATCH_QUEUE_SERIAL);
+    _imageCahceQueue = dispatch_queue_create("IMAGE_CAHCES_QUEUE", DISPATCH_QUEUE_SERIAL);
     _contactsStoreManager = [ContactsStoreManager sharedInstance];
     [_contactsStoreManager initializeCoreDataURLForResource:@"CoreDataDemo" andNameTable:CONTACTENTITIES];
 //    [_contactsStoreManager clearCoreData:CONTACTENTITIES];
@@ -96,24 +98,29 @@
 
 - (void)storeImagetoCahes {
     
-    _contactEntites = [_contactsStoreManager getObjectsFromTable:CONTACTENTITIES];
+    dispatch_async(_imageCahceQueue, ^ {
     
-    [_contactEntites enumerateObjectsUsingBlock:^(ContactEntities* _Nonnull obj, NSUInteger idx, BOOL* _Nonnull stop) {
-       
-        [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[obj profileImageURL]] completion:^(UIImage* image) {
+        _contactEntites = [_contactsStoreManager getObjectsFromTable:CONTACTENTITIES];
+        
+        [_contactEntites enumerateObjectsUsingBlock:^(ContactEntities* _Nonnull obj, NSUInteger idx, BOOL* _Nonnull stop) {
             
-            if (image) {
+            if ([obj profileImageURL]) {
                 
-                image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:image]];
-                ContactCellObject* cellObject = _cellObjects[[obj identifier]];
-                NSIndexPath* indexPath = [_model indexPathForObject:cellObject];
-                __weak ContactTableViewCell* cell = [_tableView cellForRowAtIndexPath:indexPath];
-                cell.profileImageView.image = image;
-                
-                [[ContactCache sharedInstance] setImageForKey:image forKey:[obj identifier]];
+                [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[obj profileImageURL]] completion:^(UIImage* image) {
+                    
+                    if (image) {
+                        
+                        image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:image]];
+                        ContactCellObject* cellObject = _cellObjects[[obj identifier]];
+                        NSIndexPath* indexPath = [_model indexPathForObject:cellObject];
+                        __weak ContactTableViewCell* cell = [_tableView cellForRowAtIndexPath:indexPath];
+                        cell.profileImageView.image = image;
+                        [[ContactCache sharedInstance] setImageForKey:image forKey:[obj identifier]];
+                    }
+                }];
             }
         }];
-    }];
+    });
 }
 
 #pragma mark - setupData
@@ -129,7 +136,7 @@
         
         [_contactEntites enumerateObjectsUsingBlock:^(ContactEntities* _Nonnull contactEntity, NSUInteger idx, BOOL * _Nonnull stop) {
             
-            NSString* nameString = [NSString stringWithFormat:@"%@ %@",contactEntity.firstName, contactEntity.lastName];
+            NSString* nameString = [NSString stringWithFormat:@"%@ %@",[contactEntity firstName], [contactEntity lastName]];
             NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
             NSString* firstChar = @"";
             
@@ -138,7 +145,7 @@
                 firstChar = [name substringToIndex:1];
             } else {
                 
-                firstChar = [contactEntity.phoneNumber substringToIndex:1];
+                firstChar = [[contactEntity phoneNumber] substringToIndex:1];
             }
             
             if ([groupNameContact.uppercaseString rangeOfString:firstChar.uppercaseString].location == NSNotFound) {
@@ -157,7 +164,7 @@
                 [_model addSectionWithTitle:[groupNameContact substringWithRange:NSMakeRange(idx,1)].uppercaseString];
             }
             
-            NSString* nameString = [NSString stringWithFormat:@"%@ %@",contactEntity.firstName ? contactEntity.firstName:@"", contactEntity.lastName ? contactEntity.lastName:@""];
+            NSString* nameString = [NSString stringWithFormat:@"%@ %@",[contactEntity firstName] ? [contactEntity firstName ]:@"", [contactEntity lastName] ? [contactEntity lastName ]:@""];
             NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
             NSString* firstChar = @"";
             
@@ -166,7 +173,7 @@
                 firstChar = [name substringToIndex:1];
             } else {
                 
-                firstChar = [contactEntity.phoneNumber substringToIndex:1];
+                firstChar = [[contactEntity phoneNumber] substringToIndex:1];
             }
             
             NSRange range = [groupNameContact rangeOfString:firstChar.uppercaseString];
@@ -351,6 +358,24 @@
     UITableViewHeaderFooterView* header = (UITableViewHeaderFooterView *)view;
     header.textLabel.textColor = [UIColor grayColor];
     header.textLabel.font = [UIFont fontWithName:@"Helvetica-Bold" size:14];
+}
+
+#pragma mark - selected
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    // action click to call contact cell.
+    ContactCellObject* cellObject = [_model objectAtIndexPath:indexPath];
+    
+    if (cellObject.phoneNumber) {
+        
+        [[[UIAlertView alloc] initWithTitle:@"Do you want to call?" message: cellObject.phoneNumber delegate:self cancelButtonTitle:@"Call" otherButtonTitles:@"Close", nil] show];
+    }
+    
+    [UIView animateWithDuration:0.2 animations: ^ {
+        
+        [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    }];
 }
 
 @end
