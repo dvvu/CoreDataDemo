@@ -6,13 +6,13 @@
 //  Copyright © 2017 Doan Van Vu. All rights reserved.
 //
 
-#import "ContactEntities+CoreDataClass.h"
+#import "Contact+CoreDataClass.h"
 #import "ResultTableViewController.h"
 #import "ThreadSafeForMutableArray.h"
 #import "AddContactViewController.h"
-#import "ContactsStoreManager.h"
 #import "ContactTableViewCell.h"
 #import "CoreData/CoreData.h"
+#import "CoreDataManager.h"
 #import "ViewController.h"
 #import "ImageSupporter.h"
 #import "ContactCache.h"
@@ -20,13 +20,12 @@
 #import "NimbusCore.h"
 #import "Constants.h"
 #import "Masonry.h"
-#import "ZLMImageCache.h"
 
 @interface ViewController () <NITableViewModelDelegate, UISearchResultsUpdating, UITableViewDelegate>
 
 @property (nonatomic) ResultTableViewController* searchResultTableViewController;
-@property (nonatomic) ContactsStoreManager* contactsStoreManager;
-@property (nonatomic) NSArray<ContactEntities*>* contactEntites;
+@property (nonatomic) CoreDataManager* coreDataManager;
+@property (nonatomic) NSArray<Contact*>* contacts;
 @property (weak, nonatomic) IBOutlet UIView *searchBarView;
 @property (nonatomic) UISearchController* searchController;
 @property (nonatomic) dispatch_queue_t imageCahceQueue;
@@ -47,8 +46,7 @@
     [self setupBarButton];
     [self createSearchController];
     [self setupTableMode];
-    [self setupData];
-    [self storeImagetoCahes];
+    [self loadDataFromCoreData];
 }
 
 #pragma mark - setupLayout
@@ -72,12 +70,13 @@
 
 - (void)setupTableMode {
     
-    _contactEntites = [[NSArray alloc] init];
+    _contacts = [[NSArray alloc] init];
     _contactQueue = dispatch_queue_create("CONTACT_QUEUE", DISPATCH_QUEUE_SERIAL);
     _imageCahceQueue = dispatch_queue_create("IMAGE_CAHCES_QUEUE", DISPATCH_QUEUE_SERIAL);
-    _contactsStoreManager = [ContactsStoreManager sharedInstance];
-    [_contactsStoreManager initializeCoreDataURLForResource:@"CoreDataDemo" andNameTable:CONTACTENTITIES];
-//    [_contactsStoreManager clearCoreData:CONTACTENTITIES];
+    
+    _coreDataManager = [CoreDataManager sharedInstance];
+    [_coreDataManager initSettingWithCoreDataName:@"CoreDataDemo" sqliteName:@"CoreDataDemoSqlite"];
+    
     [_tableView registerClass:[ContactTableViewCell class] forCellReuseIdentifier:@"ContactTableViewCell"];
     _tableView.delegate = self;
     [_model setSectionIndexType:NITableViewModelSectionIndexDynamic showsSearch:YES showsSummary:NO];
@@ -91,35 +90,44 @@
     
     if (_needReload) {
         
-        [self setupData];
+        [self loadDataFromCoreData];
     }
+}
+
+#pragma mark - loadDataFromCoreData
+
+- (void)loadDataFromCoreData {
+    
+    [_coreDataManager fetchWithEntity:CONTACT Predicate:nil success:^(NSArray* results) {
+        
+        _contacts = results;
+        [self setupData];
+    } failed:^(NSError* error) {
+        
+        NSLog(@"eeeee");
+    }];
 }
 
 #pragma mark - storeImagetoCahes
 
-- (void)storeImagetoCahes {
+- (void)storeImagetoCahes:(Contact *)contact {
     
     dispatch_async(_imageCahceQueue, ^ {
-    
-        _contactEntites = [_contactsStoreManager getObjectsFromTable:CONTACTENTITIES];
         
-        [_contactEntites enumerateObjectsUsingBlock:^(ContactEntities* _Nonnull obj, NSUInteger idx, BOOL* _Nonnull stop) {
+        [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[contact profileImageURL]] completion:^(UIImage* image) {
             
-            if ([obj profileImageURL]) {
+            if (image) {
                 
-                [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[obj profileImageURL]] completion:^(UIImage* image) {
+                image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:image]];
+                ContactCellObject* cellObject = _cellObjects[[contact identifier]];
+                NSIndexPath* indexPath = [_model indexPathForObject:cellObject];
+                __weak ContactTableViewCell* cell = [_tableView cellForRowAtIndexPath:indexPath];
+                [[ContactCache sharedInstance] setImageForKey:image forKey:[contact identifier]];
+                // Run on main Thread
+                dispatch_async(dispatch_get_main_queue(), ^ {
                     
-                    if (image) {
-                        
-                        image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:image]];
-                        ContactCellObject* cellObject = _cellObjects[[obj identifier]];
-                        NSIndexPath* indexPath = [_model indexPathForObject:cellObject];
-                        __weak ContactTableViewCell* cell = [_tableView cellForRowAtIndexPath:indexPath];
-                        cell.profileImageView.image = image;
-                        
-                        [[ContactCache sharedInstance] setImageForKey:image forKey:[obj identifier]];
-                    }
-                }];
+                    cell.profileImageView.image = image;
+                });
             }
         }];
     });
@@ -132,13 +140,12 @@
     dispatch_async(_contactQueue, ^ {
         
         _model = [[NIMutableTableViewModel alloc] initWithDelegate:self];
-        _contactEntites = [_contactsStoreManager getObjectsFromTable:CONTACTENTITIES];
         
         __block NSString* groupNameContact = @"";
         
-        [_contactEntites enumerateObjectsUsingBlock:^(ContactEntities* _Nonnull contactEntity, NSUInteger idx, BOOL * _Nonnull stop) {
+        [_contacts enumerateObjectsUsingBlock:^(Contact* _Nonnull contact, NSUInteger idx, BOOL * _Nonnull stop) {
             
-            NSString* nameString = [NSString stringWithFormat:@"%@ %@",[contactEntity firstName], [contactEntity lastName]];
+            NSString* nameString = [NSString stringWithFormat:@"%@ %@",[contact firstName], [contact lastName]];
             NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
             NSString* firstChar = @"";
             
@@ -147,7 +154,7 @@
                 firstChar = [name substringToIndex:1];
             } else {
                 
-                firstChar = [[contactEntity phoneNumber] substringToIndex:1];
+                firstChar = [[contact phoneNumber] substringToIndex:1];
             }
             
             if ([groupNameContact.uppercaseString rangeOfString:firstChar.uppercaseString].location == NSNotFound) {
@@ -159,14 +166,14 @@
         int characterGroupNameCount = (int)[groupNameContact length];
         NSMutableDictionary* objectsDict = [[NSMutableDictionary alloc] init];
         
-        [_contactEntites enumerateObjectsUsingBlock:^(ContactEntities* _Nonnull contactEntity, NSUInteger idx, BOOL * _Nonnull stop) {
+        [_contacts enumerateObjectsUsingBlock:^(Contact* _Nonnull contact, NSUInteger idx, BOOL * _Nonnull stop) {
             
             if (idx < characterGroupNameCount) {
                 
                 [_model addSectionWithTitle:[groupNameContact substringWithRange:NSMakeRange(idx,1)].uppercaseString];
             }
             
-            NSString* nameString = [NSString stringWithFormat:@"%@ %@",[contactEntity firstName] ? [contactEntity firstName ]:@"", [contactEntity lastName] ? [contactEntity lastName ]:@""];
+            NSString* nameString = [NSString stringWithFormat:@"%@ %@",[contact firstName] ? [contact firstName ]:@"", [contact lastName] ? [contact lastName ]:@""];
             NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
             NSString* firstChar = @"";
             
@@ -175,7 +182,7 @@
                 firstChar = [name substringToIndex:1];
             } else {
                 
-                firstChar = [[contactEntity phoneNumber] substringToIndex:1];
+                firstChar = [[contact phoneNumber] substringToIndex:1];
             }
             
             NSRange range = [groupNameContact rangeOfString:firstChar.uppercaseString];
@@ -184,12 +191,12 @@
                 
                 ContactCellObject* cellObject = [[ContactCellObject alloc] init];
                 
-                cellObject.firstName = [contactEntity firstName] ? [contactEntity firstName] : @"";
-                cellObject.lastName = [contactEntity lastName] ? [contactEntity lastName] : @"";
-                cellObject.identifier = [contactEntity identifier];
-                cellObject.phoneNumber = [contactEntity phoneNumber];
-                cellObject.company = [contactEntity company];
-                cellObject.profileImageURL = [contactEntity profileImageURL];
+                cellObject.firstName = [contact firstName] ? [contact firstName] : @"";
+                cellObject.lastName = [contact lastName] ? [contact lastName] : @"";
+                cellObject.identifier = [contact identifier];
+                cellObject.phoneNumber = [contact phoneNumber];
+                cellObject.company = [contact company];
+                cellObject.profileImageURL = [contact profileImageURL];
                 NSLog(@"i: %@",cellObject.identifier);
                 
                 NSString* lastChar = @"";
@@ -200,9 +207,13 @@
                 }
                 
                 NSString* nameDefault = [NSString stringWithFormat:@"%@%@",firstChar,lastChar];
-                cellObject.contactImage = [[ImageSupporter sharedInstance] profileImageDefault:nameDefault];
+                [[ImageSupporter sharedInstance] profileImageDefault:nameDefault completion:^(UIImage* imageDefault) {
+                    
+                    cellObject.contactImage = imageDefault;
+                }];
                 
-                 objectsDict[cellObject.identifier] = cellObject;
+                [self storeImagetoCahes:contact];
+                objectsDict[cellObject.identifier] = cellObject;
                 [_model addObject:cellObject toSection:range.location];
             }
         }];
@@ -269,14 +280,14 @@
 - (NSArray *)tableView:(UITableView *)tableView editActionsForRowAtIndexPath:(NSIndexPath *)indexPath {
     
     id object = [_model objectAtIndexPath:indexPath];
-    ContactEntities* contactEntities = (ContactEntities *)object;
+    Contact* contact = (Contact *)object;
     
     UITableViewRowAction* eidtButton = [UITableViewRowAction rowActionWithStyle:UITableViewRowActionStyleDefault title:@"Edit" handler:^(UITableViewRowAction* action, NSIndexPath* indexPath) {
         
         [tableView setEditing:NO];
         AddContactViewController* addContactViewController = [self.storyboard instantiateViewControllerWithIdentifier:@"AddContactViewController"];
         [self.navigationController pushViewController:addContactViewController animated:YES];
-        addContactViewController.contactEntities = contactEntities;
+        addContactViewController.contact = contact;
     }];
     
     eidtButton.backgroundColor = [UIColor lightGrayColor];
@@ -284,12 +295,26 @@
     UITableViewRowAction* deleteAction = [UITableViewRowAction rowActionWithStyle:UITableViewRowActionStyleDestructive title:@"Delete"  handler:^(UITableViewRowAction* action, NSIndexPath* indexPath) {
         
         [tableView setEditing:NO];
-        [_contactsStoreManager deleteObject:contactEntities fromTable:CONTACTENTITIES];
         
-        [[ContactCache sharedInstance] removeImageForKey:[contactEntities identifier] completionWith:^{
-          
-            [self setupData];
-        }];
+        NSPredicate* pred = [_coreDataManager setPredicateEqualWithSearchKey:CONTACT searchValue:[contact identifier]];
+        
+        [_coreDataManager fetchWithEntity:CONTACT Predicate:pred success:^(NSArray* results) {
+            
+             // delete entity
+             for (Contact* deleteContact in results) {
+                 
+                 [_coreDataManager deleteWithEntity:deleteContact];
+                 break;
+             }
+            
+            [[ContactCache sharedInstance] removeImageForKey:[contact identifier] completionWith:^{
+                
+                [self loadDataFromCoreData];
+            }];
+         } failed:^(NSError* error) {
+             
+             NSLog(@"reee");
+         }];
     }];
     
     return @[deleteAction, eidtButton];
@@ -317,20 +342,40 @@
     
     NSString* searchString = searchController.searchBar.text;
     
-    if (_contactEntites.count > 0 && ![[_contactEntites objectAtIndex:0] managedObjectContext]) {
+    if (_contacts.count > 0 && ![[_contacts objectAtIndex:0] managedObjectContext]) {
      
-        _contactEntites = [_contactsStoreManager getObjectsFromTable:CONTACTENTITIES];
-    }
-    
-    if (searchString.length > 0) {
-        
-        NSPredicate* predicate = [NSPredicate predicateWithFormat:@"firstName contains[cd] %@ OR lastName contains[cd] %@ OR phoneNumber contains[cd] %@ OR company contains[cd] %@", searchString, searchString, searchString, searchString];
-        
-        NSArray<ContactEntities*>* contactEntities = [_contactEntites filteredArrayUsingPredicate:predicate];
-        
-        if (contactEntities) {
+        [_coreDataManager fetchWithEntity:CONTACT Predicate:nil success:^(NSArray* results) {
             
-            [_searchResultTableViewController repareData:contactEntities];
+            _contacts = results;
+            
+            if (searchString.length > 0) {
+                
+                NSPredicate* predicate = [NSPredicate predicateWithFormat:@"firstName contains[cd] %@ OR lastName contains[cd] %@ OR phoneNumber contains[cd] %@ OR company contains[cd] %@", searchString, searchString, searchString, searchString];
+                
+                NSArray<Contact*>* contacts = [_contacts filteredArrayUsingPredicate:predicate];
+                
+                if (contacts) {
+                    
+                    [_searchResultTableViewController repareData:contacts];
+                }
+            }
+            
+        } failed:^(NSError* error) {
+            
+            NSLog(@"eeeee");
+        }];
+    } else {
+        
+        if (searchString.length > 0) {
+            
+            NSPredicate* predicate = [NSPredicate predicateWithFormat:@"firstName contains[cd] %@ OR lastName contains[cd] %@ OR phoneNumber contains[cd] %@ OR company contains[cd] %@", searchString, searchString, searchString, searchString];
+            
+            NSArray<Contact*>* contacts = [_contacts filteredArrayUsingPredicate:predicate];
+            
+            if (contacts) {
+                
+                [_searchResultTableViewController repareData:contacts];
+            }
         }
     }
 }

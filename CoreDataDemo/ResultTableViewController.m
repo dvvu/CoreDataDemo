@@ -6,7 +6,7 @@
 //  Copyright © 2017 Vu Doan. All rights reserved.
 //
 
-#import "ContactEntities+CoreDataClass.h"
+#import "Contact+CoreDataClass.h"
 #import "ResultTableViewController.h"
 #import "ContactTableViewCell.h"
 #import "ContactCellObject.h"
@@ -17,7 +17,7 @@
 @interface ResultTableViewController () <NITableViewModelDelegate>
 
 @property (nonatomic) dispatch_queue_t resultSearchContactQueue;
-@property (nonatomic) NSArray<ContactEntities*>* listContactBook;
+@property (nonatomic) NSArray<Contact*>* listContactBook;
 @property (nonatomic) NITableViewModel* model;
 
 @end
@@ -37,7 +37,7 @@
 
 #pragma mark - repareData
 
-- (void)repareData:(NSArray<ContactEntities*>*) listContactBook {
+- (void)repareData:(NSArray<Contact*>*) listContactBook {
     
     _listContactBook = listContactBook;
     _resultSearchContactQueue = dispatch_queue_create("RESULT_SEARCH_CONTACT_QUEUE", DISPATCH_QUEUE_SERIAL);
@@ -54,7 +54,7 @@
             
             NSMutableArray* objects = [NSMutableArray array];
             
-            for (ContactEntities* contactEntity in _listContactBook) {
+            for (Contact* contactEntity in _listContactBook) {
                 
                 ContactCellObject* cellObject = [[ContactCellObject alloc] init];
                 cellObject.firstName = [contactEntity firstName];

@@ -8,17 +8,15 @@
 
 #import "AddContactViewController.h"
 #import "ImageSupporter.h"
-#import "ContactsStoreManager.h"
 #import "ViewController.h"
 #import "ContactCache.h"
 #import "NIInMemoryCache.h"
 #import "Constants.h"
 #import "Masonry.h"
-#import "ZLMImageCache.h"
+#import "CoreDataManager.h"
 
 @interface AddContactViewController () <UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate>
 
-@property (nonatomic) ContactsStoreManager* contactsStoreManager;
 @property (nonatomic) UITextField* companyNameTextField;
 @property (nonatomic) UITextField* phoneNumberTextField;
 @property (nonatomic) UITextField* firstNameTextField;
@@ -43,8 +41,8 @@
     [self setupBarButton];
     [self setTitle:@"Add Contacts"];
     
-    _contactsStoreManager = [ContactsStoreManager sharedInstance];
-    [_contactsStoreManager initializeCoreDataURLForResource:@"CoreDataDemo" andNameTable:CONTACTENTITIES];
+    [[CoreDataManager sharedInstance] initSettingWithCoreDataName:@"CoreDataDemo" sqliteName:@"CoreDataDemoSqlite"];
+    
     [self setupDataUpdate];
 }
 
@@ -180,18 +178,20 @@
 
 - (void)setupDataUpdate {
     
-    if (_contactEntities) {
+    if (_contact) {
         
         [self setTitle:@"Update Contacts"];
-        [_firstNameTextField setText:[_contactEntities firstName]];
-        [_lastNameTextField setText:[_contactEntities lastName]];
-        [_companyNameTextField setText:[_contactEntities company]];
-        [_phoneNumberTextField setText:[_contactEntities phoneNumber]];
+        [_firstNameTextField setText:[_contact firstName]];
+        [_lastNameTextField setText:[_contact lastName]];
+        [_companyNameTextField setText:[_contact company]];
+        [_phoneNumberTextField setText:[_contact phoneNumber]];
+        _profileImageURL = [NSURL URLWithString:[_contact profileImageURL]];
+        
         [self phoneTextFieldDidChange:_phoneNumberTextField];
         
-        if ([_contactEntities profileImageURL]) {
+        if ([_contact profileImageURL]) {
             
-            [[ContactCache sharedInstance] getImageForKey:[_contactEntities identifier] completionWith:^(UIImage* image) {
+            [[ContactCache sharedInstance] getImageForKey:[_contact identifier] completionWith:^(UIImage* image) {
                 
                 if (image) {
                     
@@ -231,48 +231,64 @@
 
 - (IBAction)done:(id)sender {
     
-    if (_contactEntities) {
-        
-        _contactEntities.firstName = _firstNameTextField.text;
-        _contactEntities.lastName = _lastNameTextField.text;
-        _contactEntities.phoneNumber = _phoneNumberTextField.text;
-        _contactEntities.company = _companyNameTextField.text;
-        
-        if (_contactEntities.profileImageURL != _profileImageURL.absoluteString) {
+    if (_contact) {
+
+        NSPredicate* pred = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:@"identifier" searchValue:[_contact identifier]];
+      
+        [[CoreDataManager sharedInstance] fetchWithEntity:CONTACT Predicate:pred success:^(NSArray* results) {
             
-            _contactEntities.profileImageURL = _profileImageURL.absoluteString;
+             for (Contact* updateContact in results) {
+                 
+                 updateContact.firstName = _firstNameTextField.text;
+                 updateContact.lastName = _lastNameTextField.text;
+                 updateContact.phoneNumber = _phoneNumberTextField.text;
+                 updateContact.company = _companyNameTextField.text;
+                 updateContact.profileImageURL = _profileImageURL.absoluteString;
+                 [[CoreDataManager sharedInstance] save];
+                 break;
+             }
             
-            [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[_contactEntities profileImageURL]] completion:^(UIImage* image) {
+            if (_contact.profileImageURL != _profileImageURL.absoluteString) {
                 
-                if (image) {
+                _contact.profileImageURL = _profileImageURL.absoluteString;
+                
+                [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[_contact profileImageURL]] completion:^(UIImage* image) {
                     
-                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:[_contactEntities identifier]];
-                }
-            }];
-        }
-        
-        [_contactsStoreManager updateObjec:_contactEntities atTable:CONTACTENTITIES];
+                    if (image) {
+                        
+                        [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:[_contact identifier]];
+                    }
+                }];
+            }
+         } failed:^(NSError* error) {
+             
+             NSLog(@"EOROR");
+         }];
     } else {
         
-        ContactEntities* contactEntities = [[ContactEntities alloc] initWithContext:_contactsStoreManager.managedObjectContext];
-        contactEntities.firstName = _firstNameTextField.text;
-        contactEntities.lastName = _lastNameTextField.text;
-        contactEntities.phoneNumber = _phoneNumberTextField.text;
-        contactEntities.company = _companyNameTextField.text;
-        contactEntities.identifier = [[NSUUID UUID] UUIDString];
-        contactEntities.profileImageURL = _profileImageURL.absoluteString;
-        [_contactsStoreManager addObject:contactEntities toTable:CONTACTENTITIES];
+        for (int i = 0; i < 1000; i ++) {
         
-        if (_profileImageURL.absoluteString) {
+            Contact* contact = [[CoreDataManager sharedInstance] createInsertEntityWithClassName:CONTACT];
+            contact.firstName = _firstNameTextField.text;
+            contact.lastName = _lastNameTextField.text;
+            contact.phoneNumber = _phoneNumberTextField.text;
+            contact.company = _companyNameTextField.text;
+            contact.identifier = [[NSUUID UUID] UUIDString];
+            contact.profileImageURL = _profileImageURL.absoluteString;
             
-            [[ImageSupporter sharedInstance] getImagePickerwithURL:_profileImageURL completion:^(UIImage* image) {
+            if (_profileImageURL.absoluteString) {
                 
-                if (image) {
+                [[ImageSupporter sharedInstance] getImagePickerwithURL:_profileImageURL completion:^(UIImage* image) {
                     
-                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:contactEntities.identifier];
-                }
-            }];
+                    if (image) {
+                        
+                        [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:contact.identifier];
+                    }
+                }];
+            }
         }
+        
+        [[CoreDataManager sharedInstance] save];
     }
     
     ViewController* viewController = (ViewController *)[self.navigationController.viewControllers objectAtIndex:0];

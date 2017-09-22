@@ -59,12 +59,12 @@
 		EA2571231F70BB0E007752BA /* ContactCache.m in Sources */ = {isa = PBXBuildFile; fileRef = EA2571221F70BB0E007752BA /* ContactCache.m */; };
 		EA25712A1F70BB84007752BA /* ContactTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = EA2571271F70BB84007752BA /* ContactTableViewCell.m */; };
 		EA25712B1F70BB84007752BA /* ContactCellObject.m in Sources */ = {isa = PBXBuildFile; fileRef = EA2571291F70BB84007752BA /* ContactCellObject.m */; };
-		EA25712F1F70BC23007752BA /* ContactsStoreManager.m in Sources */ = {isa = PBXBuildFile; fileRef = EA25712E1F70BC23007752BA /* ContactsStoreManager.m */; };
 		EA2571321F70BC5C007752BA /* AddContactViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = EA2571311F70BC5C007752BA /* AddContactViewController.m */; };
 		EA2571351F70BE64007752BA /* ResultTableViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = EA2571341F70BE64007752BA /* ResultTableViewController.m */; };
 		EA2571381F70BF43007752BA /* ContactEntity.m in Sources */ = {isa = PBXBuildFile; fileRef = EA2571371F70BF43007752BA /* ContactEntity.m */; };
-		EA25713D1F70CC78007752BA /* ContactEntities+CoreDataClass.m in Sources */ = {isa = PBXBuildFile; fileRef = EA25713A1F70CC78007752BA /* ContactEntities+CoreDataClass.m */; };
-		EA25713E1F70CC78007752BA /* ContactEntities+CoreDataProperties.m in Sources */ = {isa = PBXBuildFile; fileRef = EA25713C1F70CC78007752BA /* ContactEntities+CoreDataProperties.m */; };
+		EA2BE8811F74B62500AD0D56 /* CoreDataManager.m in Sources */ = {isa = PBXBuildFile; fileRef = EA2BE8801F74B62500AD0D56 /* CoreDataManager.m */; };
+		EA2BE8861F7511CB00AD0D56 /* Contact+CoreDataClass.m in Sources */ = {isa = PBXBuildFile; fileRef = EA2BE8831F7511CB00AD0D56 /* Contact+CoreDataClass.m */; };
+		EA2BE8871F7511CB00AD0D56 /* Contact+CoreDataProperties.m in Sources */ = {isa = PBXBuildFile; fileRef = EA2BE8851F7511CB00AD0D56 /* Contact+CoreDataProperties.m */; };
 		EAD583A71F728CC200D2592F /* ImageSupporter.m in Sources */ = {isa = PBXBuildFile; fileRef = EAD583A61F728CC200D2592F /* ImageSupporter.m */; };
 /* End PBXBuildFile section */
 
@@ -191,18 +191,18 @@
 		EA2571271F70BB84007752BA /* ContactTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ContactTableViewCell.m; sourceTree = "<group>"; };
 		EA2571281F70BB84007752BA /* ContactCellObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ContactCellObject.h; sourceTree = "<group>"; };
 		EA2571291F70BB84007752BA /* ContactCellObject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ContactCellObject.m; sourceTree = "<group>"; };
-		EA25712D1F70BC23007752BA /* ContactsStoreManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ContactsStoreManager.h; sourceTree = "<group>"; };
-		EA25712E1F70BC23007752BA /* ContactsStoreManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ContactsStoreManager.m; sourceTree = "<group>"; };
 		EA2571301F70BC5C007752BA /* AddContactViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AddContactViewController.h; sourceTree = "<group>"; };
 		EA2571311F70BC5C007752BA /* AddContactViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AddContactViewController.m; sourceTree = "<group>"; };
 		EA2571331F70BE64007752BA /* ResultTableViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ResultTableViewController.h; sourceTree = "<group>"; };
 		EA2571341F70BE64007752BA /* ResultTableViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ResultTableViewController.m; sourceTree = "<group>"; };
 		EA2571361F70BF43007752BA /* ContactEntity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ContactEntity.h; sourceTree = "<group>"; };
 		EA2571371F70BF43007752BA /* ContactEntity.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ContactEntity.m; sourceTree = "<group>"; };
-		EA2571391F70CC78007752BA /* ContactEntities+CoreDataClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "ContactEntities+CoreDataClass.h"; sourceTree = "<group>"; };
-		EA25713A1F70CC78007752BA /* ContactEntities+CoreDataClass.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "ContactEntities+CoreDataClass.m"; sourceTree = "<group>"; };
-		EA25713B1F70CC78007752BA /* ContactEntities+CoreDataProperties.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "ContactEntities+CoreDataProperties.h"; sourceTree = "<group>"; };
-		EA25713C1F70CC78007752BA /* ContactEntities+CoreDataProperties.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "ContactEntities+CoreDataProperties.m"; sourceTree = "<group>"; };
+		EA2BE87F1F74B62500AD0D56 /* CoreDataManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreDataManager.h; sourceTree = "<group>"; };
+		EA2BE8801F74B62500AD0D56 /* CoreDataManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CoreDataManager.m; sourceTree = "<group>"; };
+		EA2BE8821F7511CB00AD0D56 /* Contact+CoreDataClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Contact+CoreDataClass.h"; sourceTree = "<group>"; };
+		EA2BE8831F7511CB00AD0D56 /* Contact+CoreDataClass.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "Contact+CoreDataClass.m"; sourceTree = "<group>"; };
+		EA2BE8841F7511CB00AD0D56 /* Contact+CoreDataProperties.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Contact+CoreDataProperties.h"; sourceTree = "<group>"; };
+		EA2BE8851F7511CB00AD0D56 /* Contact+CoreDataProperties.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "Contact+CoreDataProperties.m"; sourceTree = "<group>"; };
 		EAD583A51F728CC200D2592F /* ImageSupporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImageSupporter.h; sourceTree = "<group>"; };
 		EAD583A61F728CC200D2592F /* ImageSupporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImageSupporter.m; sourceTree = "<group>"; };
 		FBB38B3A232CFA6009ABB6A6 /* Pods_CoreDataDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CoreDataDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -458,10 +458,10 @@
 				EA2571341F70BE64007752BA /* ResultTableViewController.m */,
 				EA2571301F70BC5C007752BA /* AddContactViewController.h */,
 				EA2571311F70BC5C007752BA /* AddContactViewController.m */,
-				EA25712D1F70BC23007752BA /* ContactsStoreManager.h */,
-				EA25712E1F70BC23007752BA /* ContactsStoreManager.m */,
 				EA2570971F70BA0D007752BA /* ViewController.h */,
 				EA2570981F70BA0D007752BA /* ViewController.m */,
+				EA2BE87F1F74B62500AD0D56 /* CoreDataManager.h */,
+				EA2BE8801F74B62500AD0D56 /* CoreDataManager.m */,
 			);
 			name = ContactsStoreManager;
 			sourceTree = "<group>";
@@ -469,10 +469,10 @@
 		EA25713F1F710C93007752BA /* ContactEntities+CoreDataProperties */ = {
 			isa = PBXGroup;
 			children = (
-				EA2571391F70CC78007752BA /* ContactEntities+CoreDataClass.h */,
-				EA25713A1F70CC78007752BA /* ContactEntities+CoreDataClass.m */,
-				EA25713B1F70CC78007752BA /* ContactEntities+CoreDataProperties.h */,
-				EA25713C1F70CC78007752BA /* ContactEntities+CoreDataProperties.m */,
+				EA2BE8821F7511CB00AD0D56 /* Contact+CoreDataClass.h */,
+				EA2BE8831F7511CB00AD0D56 /* Contact+CoreDataClass.m */,
+				EA2BE8841F7511CB00AD0D56 /* Contact+CoreDataProperties.h */,
+				EA2BE8851F7511CB00AD0D56 /* Contact+CoreDataProperties.m */,
 				EA2571361F70BF43007752BA /* ContactEntity.h */,
 				EA2571371F70BF43007752BA /* ContactEntity.m */,
 			);
@@ -646,7 +646,6 @@
 				EA2571191F70BA95007752BA /* NIFormCellCatalog.m in Sources */,
 				EA2571001F70BA7F007752BA /* NIImageUtilities.m in Sources */,
 				EA2570F31F70BA7F007752BA /* NINonRetainingCollections.m in Sources */,
-				EA25713D1F70CC78007752BA /* ContactEntities+CoreDataClass.m in Sources */,
 				EA1596D11F73B02400B05E12 /* UIImage+Extension.m in Sources */,
 				EA2570FD1F70BA7F007752BA /* NIDeviceOrientation.m in Sources */,
 				EA2570FE1F70BA7F007752BA /* NIError.m in Sources */,
@@ -659,16 +658,19 @@
 				EA25711F1F70BA95007752BA /* NITableViewModel.m in Sources */,
 				EA2570BC1F70BA2C007752BA /* ThreadSafeForMutableArray.m in Sources */,
 				EA1596D51F73B02C00B05E12 /* ZLMImageCache.m in Sources */,
+				EA2BE8871F7511CB00AD0D56 /* Contact+CoreDataProperties.m in Sources */,
 				EA2570F61F70BA7F007752BA /* NIRuntimeClassModifications.m in Sources */,
 				EA25711D1F70BA95007752BA /* NIRadioGroupController.m in Sources */,
 				EA2571181F70BA95007752BA /* NICellFactory.m in Sources */,
 				EA2570EE1F70BA7F007752BA /* NIButtonUtilities.m in Sources */,
 				EA2570FA1F70BA7F007752BA /* NIViewRecycler.m in Sources */,
+				EA2BE8861F7511CB00AD0D56 /* Contact+CoreDataClass.m in Sources */,
 				EA1596C51F73B01500B05E12 /* LRUMemoryCache.m in Sources */,
 				EA25712B1F70BB84007752BA /* ContactCellObject.m in Sources */,
 				EA2570991F70BA0D007752BA /* ViewController.m in Sources */,
 				EA2570FF1F70BA7F007752BA /* NIFoundationMethods.m in Sources */,
 				EA2570EF1F70BA7F007752BA /* NICommonMetrics.m in Sources */,
+				EA2BE8811F74B62500AD0D56 /* CoreDataManager.m in Sources */,
 				EA2571351F70BE64007752BA /* ResultTableViewController.m in Sources */,
 				EA25711E1F70BA95007752BA /* NITableViewActions.m in Sources */,
 				EA25711B1F70BA95007752BA /* NICellBackgrounds.m in Sources */,
@@ -677,7 +679,6 @@
 				EA2570961F70BA0D007752BA /* AppDelegate.m in Sources */,
 				EA2571321F70BC5C007752BA /* AddContactViewController.m in Sources */,
 				EA2570FC1F70BA7F007752BA /* NIDebuggingTools.m in Sources */,
-				EA25713E1F70CC78007752BA /* ContactEntities+CoreDataProperties.m in Sources */,
 				EA2570F41F70BA7F007752BA /* NIOperations.m in Sources */,
 				EA1596C61F73B01500B05E12 /* LRUObject.m in Sources */,
 				EA2570FB1F70BA7F007752BA /* UIResponder+NimbusCore.m in Sources */,
@@ -687,7 +688,6 @@
 				EA1596D81F73B05000B05E12 /* ZLMtsMutableArray.m in Sources */,
 				EA2570F91F70BA7F007752BA /* NIState.m in Sources */,
 				EA25711C1F70BA95007752BA /* NIRadioGroup.m in Sources */,
-				EA25712F1F70BC23007752BA /* ContactsStoreManager.m in Sources */,
 				EA2571171F70BA95007752BA /* NICellCatalog.m in Sources */,
 				EA1596DB1F73B06100B05E12 /* ZLMtsMutableDictionary.m in Sources */,
 				EA2570ED1F70BA7F007752BA /* NIActions.m in Sources */,

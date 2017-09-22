@@ -27,6 +27,6 @@
 - (void)getImagePickerwithURL:(NSURL *)profileImageURL completion:(void(^)(UIImage *))completion;
 
 #pragma mark - profileImageDefault
-- (UIImage *)profileImageDefault:(NSString *)textNameDefault;
+- (void)profileImageDefault:(NSString *)textNameDefault completion:(void(^)(UIImage *))completion;
 
 @end

@@ -12,6 +12,7 @@
 @interface ImageSupporter ()
 
 @property (nonatomic) dispatch_queue_t photoPermissionQueue;
+@property (nonatomic) dispatch_queue_t defaultImageQueue;
 
 @end
 
@@ -39,6 +40,7 @@
     if (self) {
         
         _photoPermissionQueue = dispatch_queue_create("PHOTO_PERMISSION_QUEUE", DISPATCH_QUEUE_SERIAL);
+        _defaultImageQueue = dispatch_queue_create("DEFAULT_IMAGE_QUEUE", DISPATCH_QUEUE_SERIAL);
     }
     
     return self;
@@ -177,53 +179,58 @@
 
 #pragma mark - profileImageDefault
 
-- (UIImage *)profileImageDefault:(NSString *)textNameDefault {
+- (void)profileImageDefault:(NSString *)textNameDefault completion:(void(^)(UIImage *))completion {
     
-    // Size image
-    int imageWidth = 100;
-    int imageHeight =  100;
+    dispatch_async(_photoPermissionQueue, ^ {
     
-    // Rect for image
-    CGRect rect = CGRectMake(0,0,imageHeight,imageHeight);
-    
-    // setup text
-    UIFont* font = [UIFont systemFontOfSize: 50];
-    CGSize textSize = [textNameDefault.uppercaseString sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:50]}];
-    NSMutableAttributedString* nameAttString = [[NSMutableAttributedString alloc] initWithString:textNameDefault.uppercaseString];
-    NSRange range = NSMakeRange(0, [nameAttString length]);
-    [nameAttString addAttribute:NSFontAttributeName value:font range:range];
-    [nameAttString addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:range];
-    
-    // Create image
-    CGSize imageSize = CGSizeMake(imageWidth, imageHeight);
-    UIColor* fillColor = [UIColor lightGrayColor];
-    
-    // Begin ImageContext Options
-    UIGraphicsBeginImageContextWithOptions(imageSize, YES, 0);
-    
-    CGContextRef context = UIGraphicsGetCurrentContext();
-    [fillColor setFill];
-    CGContextFillRect(context, CGRectMake(0, 0, imageSize.width, imageSize.height));
-    UIImage* image = UIGraphicsGetImageFromCurrentImageContext();
-    
-    // Begin ImageContext
-    UIGraphicsBeginImageContext(rect.size);
-    
-    //  Draw Circle image
-    [[UIBezierPath bezierPathWithRoundedRect:rect cornerRadius:imageWidth/2] addClip];
-    [image drawInRect:rect];
-    
-    // Draw text
-    [nameAttString drawInRect:CGRectIntegral(CGRectMake(imageWidth/2 - textSize.width/2, imageHeight/2 - textSize.height/2, imageWidth, imageHeight))];
-    UIImage* profileImageDefault = UIGraphicsGetImageFromCurrentImageContext();
-    
-    // End ImageContext
-    UIGraphicsEndImageContext();
-    
-    // End ImageContext Options
-    UIGraphicsEndImageContext();
-    
-    return profileImageDefault;
+        int imageWidth = 100;
+        int imageHeight =  100;
+        
+        // Rect for image
+        CGRect rect = CGRectMake(0,0,imageHeight,imageHeight);
+        
+        // setup text
+        UIFont* font = [UIFont systemFontOfSize: 50];
+        CGSize textSize = [textNameDefault.uppercaseString sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:50]}];
+        NSMutableAttributedString* nameAttString = [[NSMutableAttributedString alloc] initWithString:textNameDefault.uppercaseString];
+        NSRange range = NSMakeRange(0, [nameAttString length]);
+        [nameAttString addAttribute:NSFontAttributeName value:font range:range];
+        [nameAttString addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:range];
+        
+        // Create image
+        CGSize imageSize = CGSizeMake(imageWidth, imageHeight);
+        UIColor* fillColor = [UIColor lightGrayColor];
+        
+        // Begin ImageContext Options
+        UIGraphicsBeginImageContextWithOptions(imageSize, YES, 0);
+        
+        CGContextRef context = UIGraphicsGetCurrentContext();
+        [fillColor setFill];
+        CGContextFillRect(context, CGRectMake(0, 0, imageSize.width, imageSize.height));
+        UIImage* image = UIGraphicsGetImageFromCurrentImageContext();
+        
+        // Begin ImageContext
+        UIGraphicsBeginImageContext(rect.size);
+        
+        //  Draw Circle image
+        [[UIBezierPath bezierPathWithRoundedRect:rect cornerRadius:imageWidth/2] addClip];
+        [image drawInRect:rect];
+        
+        // Draw text
+        [nameAttString drawInRect:CGRectIntegral(CGRectMake(imageWidth/2 - textSize.width/2, imageHeight/2 - textSize.height/2, imageWidth, imageHeight))];
+        UIImage* profileImageDefault = UIGraphicsGetImageFromCurrentImageContext();
+        
+        // End ImageContext
+        UIGraphicsEndImageContext();
+        
+        // End ImageContext Options
+        UIGraphicsEndImageContext();
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            completion(profileImageDefault);
+        });
+    });
 }
 
 @end

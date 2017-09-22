@@ -59,10 +59,9 @@
 
 - (void)setImageForKey:(UIImage *)image forKey:(NSString *)key {
     
-    if (image && key) {
+    dispatch_barrier_async(_cacheImageQueue, ^ {
         
-        dispatch_barrier_async(_cacheImageQueue, ^ {
-            
+        if (image && key) {
             // Add key into keyList
             [_keyList addObject:key];
 
@@ -95,9 +94,10 @@
                     [_contactCache removeAllObjects];
                     [_contactCache setObject:circleImage forKey:key];
                 }
+                
             }];
-        });
-    }
+        }
+    });
 }
 
 #pragma mark - get to image from cache or dir
