@@ -11,6 +11,7 @@
 @interface CoreDataManager ()
 
 @property (nonatomic) NSPersistentStoreCoordinator* persistentStoreCoordinator;
+@property (nonatomic) NSManagedObjectContext* managedObjectContext;
 @property (nonatomic) NSManagedObjectModel* managedObjectModel;
 @property (nonatomic) dispatch_queue_t contactStoreQueue;
 
@@ -30,6 +31,8 @@
     
     return sharedInstance;
 }
+
+#pragma mark - init
 
 - (instancetype)init {
     
@@ -60,7 +63,7 @@
     return [NSEntityDescription insertNewObjectForEntityForName:className inManagedObjectContext:_managedObjectContext];
 }
 
-#pragma mark - Save
+#pragma mark - save
 
 - (void)save {
     
@@ -71,15 +74,14 @@
     });
 }
 
-#pragma mark - fetchWithEntity
+#pragma mark - getEntityWithClass
 
-- (void)fetchWithEntity:(NSString *)entityClass Predicate:(NSPredicate *)predicate success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
+- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
    
-    dispatch_sync(_contactStoreQueue, ^ {
+    dispatch_async(_contactStoreQueue, ^ {
        
-        NSManagedObjectContext* managedObjectContext = _managedObjectContext;
         NSFetchRequest* request = [NSFetchRequest new];
-        NSEntityDescription* entity = [NSEntityDescription entityForName:entityClass inManagedObjectContext:managedObjectContext];
+        NSEntityDescription* entity = [NSEntityDescription entityForName:entityClass inManagedObjectContext:_managedObjectContext];
         [request setEntity:entity];
         [request setSortDescriptors:@[[[NSSortDescriptor alloc] initWithKey:@"firstName" ascending:YES]]];
         
@@ -89,7 +91,7 @@
         }
 
         NSError* error;
-        NSArray* results = [managedObjectContext executeFetchRequest:request error:&error];
+        NSArray* results = [_managedObjectContext executeFetchRequest:request error:&error];
         
         if (error) {
             
@@ -100,40 +102,13 @@
     });
 }
 
-#pragma mark - autoIncrementIDWithEntityClass
-
-- (void)autoIncrementIDWithEntityClass:(NSString *)entityClass success:(CoreDataNewCreateIDSuccess)success failed:(CoreDataFailed)failed {
-    
-    dispatch_async(_contactStoreQueue, ^ {
-        
-        NSManagedObjectContext* managedObjectContext = _managedObjectContext;
-        NSFetchRequest* request = [NSFetchRequest new];
-        
-        NSEntityDescription* entity = [NSEntityDescription entityForName:entityClass inManagedObjectContext:managedObjectContext];
-        [request setEntity:entity];
-        
-        NSError* error;
-        NSArray* results = [managedObjectContext executeFetchRequest:request error:&error];
-        
-        if (error) {
-            
-            failed(error);
-        } else {
-            
-            success(results.count);
-        }
-    });
-}
-
 #pragma mark - deleteWithEntity
 
 - (void)deleteWithEntity:(id)entity {
     
     dispatch_barrier_async(_contactStoreQueue, ^ {
-    
-        NSManagedObjectContext* managedObjectContext = _managedObjectContext;
         
-        [managedObjectContext deleteObject:entity];
+        [_managedObjectContext deleteObject:entity];
         [self save];
     });
 }
@@ -143,22 +118,6 @@
 - (NSPredicate *)setPredicateEqualWithSearchKey:(NSString *)searchkey searchValue:(id)searchValue {
     
     NSPredicate* predicate = [NSPredicate predicateWithFormat:@"%K=%@",searchkey,searchValue];
-    return predicate;
-}
-
-#pragma mark - setPredicateOverWithSearchKey
-
-- (NSPredicate *)setPredicateOverWithSearchKey:(NSString *)searchkey searchValue:(id)searchValue {
-    
-    NSPredicate* predicate = [NSPredicate predicateWithFormat:@"%K=>%@",searchkey,searchValue];
-    return predicate;
-}
-
-#pragma mark - setPredicateUnderWithSearchKey
-
-- (NSPredicate *)setPredicateUnderWithSearchKey:(NSString *)searchkey searchValue:(id)searchValue {
-    
-    NSPredicate* predicate = [NSPredicate predicateWithFormat:@"%K=<%@",searchkey,searchValue];
     return predicate;
 }
 

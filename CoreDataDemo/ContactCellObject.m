@@ -8,7 +8,7 @@
 
 #import "ContactTableViewCell.h"
 #import "ContactCache.h"
-#import "ZLMImageCache.h"
+#import "ImageSupporter.h"
 
 @implementation ContactCellObject
 
@@ -32,6 +32,26 @@
                     contactTableViewCell.profileImageView.image = image;
                 });
             }
+        } else {
+            
+            [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:_profileImageURL] completion:^(UIImage* image) {
+                
+                if (image) {
+                    
+                    image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:image]];
+                   
+                    [[ContactCache sharedInstance] setImageForKey:image forKey:_identifier];
+                    
+                    // Run on main Thread
+                    if ([_identifier isEqualToString:contactTableViewCell.identifier]) {
+                        
+                        dispatch_async(dispatch_get_main_queue(), ^ {
+                            
+                            contactTableViewCell.profileImageView.image = image;
+                        });
+                    }
+                }
+            }];
         }
     }];
 }

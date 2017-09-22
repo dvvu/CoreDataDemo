@@ -62,25 +62,23 @@
     dispatch_barrier_async(_cacheImageQueue, ^ {
         
         if (image && key) {
-            // Add key into keyList
-            [_keyList addObject:key];
-
+            
             [self removeImageForKey:key completionWith:^ {
+                
+                // Add key into keyList
+                [_keyList addObject:key];
                 
                 // Get size of image
                 UIImage* circleImage = [self makeRoundImage:image];
                 CGFloat pixelImage = [self imageSize:circleImage];
                 
-                // Add size to check condition
-                _totalPixel += pixelImage;
-                
                 NSLog(@"%lu",(unsigned long)_totalPixel);
                 
                 // size of image < valid memory?
-                if (pixelImage < MAX_ITEM_SIZE) {
+                if (pixelImage <= MAX_ITEM_SIZE) {
                     
                     int index = 0;
-                    while (_totalPixel > _maxCacheSize) {
+                    while (_totalPixel > _maxCacheSize - pixelImage) {
                         
                         CGFloat size =  [self imageSize:[_contactCache objectForKey:[_keyList objectAtIndex:index]]];
                         [_contactCache removeObjectForKey:[_keyList objectAtIndex:index]];
@@ -89,12 +87,9 @@
                     }
                     
                     [_contactCache setObject:circleImage forKey:key];
-                } else if (pixelImage == _maxCacheSize) {
-                    
-                    [_contactCache removeAllObjects];
-                    [_contactCache setObject:circleImage forKey:key];
+                    // Add size to check condition
+                    _totalPixel += pixelImage;
                 }
-                
             }];
         }
     });
@@ -139,19 +134,20 @@
         
         dispatch_barrier_async(_cacheImageQueue, ^ {
             
+            UIImage* image = [self getImageFromCache:key];
+            
+            if (image) {
+                
+                UIImage* circleImage = [self makeRoundImage:image];
+                CGFloat pixelImage = [self imageSize:circleImage];
+                // Add size to check condition
+                _totalPixel -= pixelImage;
+                [_keyList removeObject:key];
+                [_contactCache removeObjectForKey:key];
+            }
+            
             if (completion) {
                 
-                UIImage* image = [self getImageFromCache:key];
-               
-                if (image) {
-                    
-                    UIImage* circleImage = [self makeRoundImage:image];
-                    CGFloat pixelImage = [self imageSize:circleImage];
-                    // Add size to check condition
-                    _totalPixel -= pixelImage;
-                    [_keyList removeObject:key];
-                    [_contactCache removeObjectForKey:key];
-                }
                 completion();
             }
         });

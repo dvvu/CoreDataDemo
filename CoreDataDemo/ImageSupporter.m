@@ -13,6 +13,8 @@
 
 @property (nonatomic) dispatch_queue_t photoPermissionQueue;
 @property (nonatomic) dispatch_queue_t defaultImageQueue;
+@property (nonatomic) dispatch_queue_t drawImageQueue;
+@property (nonatomic) dispatch_queue_t resizeImageQueue;
 
 @end
 
@@ -41,6 +43,8 @@
         
         _photoPermissionQueue = dispatch_queue_create("PHOTO_PERMISSION_QUEUE", DISPATCH_QUEUE_SERIAL);
         _defaultImageQueue = dispatch_queue_create("DEFAULT_IMAGE_QUEUE", DISPATCH_QUEUE_SERIAL);
+        _drawImageQueue = dispatch_queue_create("DRAW_IMAGE_QUEUE", DISPATCH_QUEUE_SERIAL);
+        _resizeImageQueue = dispatch_queue_create("RESIZE_IMAGE_QUEUE", DISPATCH_QUEUE_SERIAL);
     }
     
     return self;
@@ -117,17 +121,23 @@
         if (status == PHAuthorizationStatusAuthorized) {
             
             // Access has been granted.
-            dispatch_async(dispatch_get_main_queue(), ^ {
+            if (completion) {
                 
-                completion(nil);
-            });
+                dispatch_async(dispatch_get_main_queue(), ^ {
+                    
+                    completion(nil);
+                });
+            }
         } else if (status == PHAuthorizationStatusDenied) {
             
             // Access has been denied.
-            dispatch_async(dispatch_get_main_queue(), ^ {
+            if (completion) {
                 
-                completion(@"PHAuthorizationStatusDenied");
-            });
+                dispatch_async(dispatch_get_main_queue(), ^ {
+                    
+                    completion(@"PHAuthorizationStatusDenied");
+                });
+            }
         } else if (status == PHAuthorizationStatusNotDetermined) {
             
             // Access has not been determined.
@@ -135,24 +145,33 @@
                 
                 if (status == PHAuthorizationStatusAuthorized) {
                     // Access has been granted.
-                    dispatch_async(dispatch_get_main_queue(), ^ {
+                    if (completion) {
                         
-                        completion(nil);
-                    });
+                        dispatch_async(dispatch_get_main_queue(), ^ {
+                            
+                            completion(nil);
+                        });
+                    }
                 } else {
                     // Access has been denied.
-                    dispatch_async(dispatch_get_main_queue(), ^ {
+                    if (completion) {
                         
-                        completion(@"PHAuthorizationStatusDenied");
-                    });
+                        dispatch_async(dispatch_get_main_queue(), ^ {
+                            
+                            completion(@"PHAuthorizationStatusDenied");
+                        });
+                    }
                 }
             }];
         } else if (status == PHAuthorizationStatusRestricted) {
             
-            dispatch_async(dispatch_get_main_queue(), ^ {
+            if (completion) {
                 
-                completion(@"PHAuthorizationStatusRestricted");
-            });
+                dispatch_async(dispatch_get_main_queue(), ^ {
+                    
+                    completion(@"PHAuthorizationStatusRestricted");
+                });
+            }
         }
     });
 }
@@ -167,13 +186,22 @@
 
         UIImage* image = [UIImage imageWithCGImage:[[asset defaultRepresentation] fullResolutionImage]];
 
-        dispatch_async(dispatch_get_main_queue(), ^{
-
-            completion(image);
-        });
+        if (completion) {
+        
+            dispatch_async(dispatch_get_main_queue(), ^{
+                
+                completion(image);
+            });
+        }
     } failureBlock:^(NSError* error) {
 
-        completion(nil);
+        if (completion) {
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                
+                completion(nil);
+            });
+        }
     }];
 }
 
@@ -226,10 +254,13 @@
         // End ImageContext Options
         UIGraphicsEndImageContext();
         
-        dispatch_async(dispatch_get_main_queue(), ^{
+        if (completion) {
             
-            completion(profileImageDefault);
-        });
+            dispatch_async(dispatch_get_main_queue(), ^{
+                
+                completion(profileImageDefault);
+            });
+        }
     });
 }
 

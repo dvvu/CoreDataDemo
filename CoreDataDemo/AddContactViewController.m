@@ -235,7 +235,7 @@
 
         NSPredicate* pred = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:@"identifier" searchValue:[_contact identifier]];
       
-        [[CoreDataManager sharedInstance] fetchWithEntity:CONTACT Predicate:pred success:^(NSArray* results) {
+        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:pred success:^(NSArray* results) {
             
              for (Contact* updateContact in results) {
                  
@@ -262,11 +262,11 @@
             }
          } failed:^(NSError* error) {
              
-             NSLog(@"EOROR");
+             NSLog(@"%@",error);
          }];
     } else {
         
-        for (int i = 0; i < 1000; i ++) {
+//        for (int i = 0; i < 1000; i ++) {
         
             Contact* contact = [[CoreDataManager sharedInstance] createInsertEntityWithClassName:CONTACT];
             contact.firstName = _firstNameTextField.text;
@@ -286,7 +286,7 @@
                     }
                 }];
             }
-        }
+//        }
         
         [[CoreDataManager sharedInstance] save];
     }
@@ -366,7 +366,6 @@
     if (textField == _firstNameTextField) {
         
         [_lastNameTextField becomeFirstResponder];
-        return NO;
     } else if (textField == _lastNameTextField) {
         
         [_companyNameTextField becomeFirstResponder];
@@ -418,8 +417,6 @@
     NSDictionary* info = [notification userInfo];
     CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
     _phoneNumberOrginY = [_phoneNumberTextField convertRect:self.view.bounds toView:nil].origin.y + 35;
-    
-    NSLog(@"%f ---- %f", _phoneNumberOrginY, kbSize.height);
     
     if (self.view.frame.size.height > _phoneNumberOrginY + kbSize.height) {
         

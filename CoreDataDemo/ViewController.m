@@ -24,7 +24,6 @@
 @interface ViewController () <NITableViewModelDelegate, UISearchResultsUpdating, UITableViewDelegate>
 
 @property (nonatomic) ResultTableViewController* searchResultTableViewController;
-@property (nonatomic) CoreDataManager* coreDataManager;
 @property (nonatomic) NSArray<Contact*>* contacts;
 @property (weak, nonatomic) IBOutlet UIView *searchBarView;
 @property (nonatomic) UISearchController* searchController;
@@ -74,8 +73,7 @@
     _contactQueue = dispatch_queue_create("CONTACT_QUEUE", DISPATCH_QUEUE_SERIAL);
     _imageCahceQueue = dispatch_queue_create("IMAGE_CAHCES_QUEUE", DISPATCH_QUEUE_SERIAL);
     
-    _coreDataManager = [CoreDataManager sharedInstance];
-    [_coreDataManager initSettingWithCoreDataName:@"CoreDataDemo" sqliteName:@"CoreDataDemoSqlite"];
+    [[CoreDataManager sharedInstance] initSettingWithCoreDataName:@"CoreDataDemo" sqliteName:@"CoreDataDemoSqlite"];
     
     [_tableView registerClass:[ContactTableViewCell class] forCellReuseIdentifier:@"ContactTableViewCell"];
     _tableView.delegate = self;
@@ -98,39 +96,14 @@
 
 - (void)loadDataFromCoreData {
     
-    [_coreDataManager fetchWithEntity:CONTACT Predicate:nil success:^(NSArray* results) {
+    [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:nil success:^(NSArray* results) {
         
         _contacts = results;
         [self setupData];
     } failed:^(NSError* error) {
         
-        NSLog(@"eeeee");
+        NSLog(@"%@",error);
     }];
-}
-
-#pragma mark - storeImagetoCahes
-
-- (void)storeImagetoCahes:(Contact *)contact {
-    
-    dispatch_async(_imageCahceQueue, ^ {
-        
-        [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[contact profileImageURL]] completion:^(UIImage* image) {
-            
-            if (image) {
-                
-                image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:image]];
-                ContactCellObject* cellObject = _cellObjects[[contact identifier]];
-                NSIndexPath* indexPath = [_model indexPathForObject:cellObject];
-                __weak ContactTableViewCell* cell = [_tableView cellForRowAtIndexPath:indexPath];
-                [[ContactCache sharedInstance] setImageForKey:image forKey:[contact identifier]];
-                // Run on main Thread
-                dispatch_async(dispatch_get_main_queue(), ^ {
-                    
-                    cell.profileImageView.image = image;
-                });
-            }
-        }];
-    });
 }
 
 #pragma mark - setupData
@@ -211,8 +184,7 @@
                     
                     cellObject.contactImage = imageDefault;
                 }];
-                
-                [self storeImagetoCahes:contact];
+
                 objectsDict[cellObject.identifier] = cellObject;
                 [_model addObject:cellObject toSection:range.location];
             }
@@ -296,14 +268,14 @@
         
         [tableView setEditing:NO];
         
-        NSPredicate* pred = [_coreDataManager setPredicateEqualWithSearchKey:CONTACT searchValue:[contact identifier]];
+        NSPredicate* predicate = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:CONTACT searchValue:[contact identifier]];
         
-        [_coreDataManager fetchWithEntity:CONTACT Predicate:pred success:^(NSArray* results) {
+        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate success:^(NSArray* results) {
             
              // delete entity
-             for (Contact* deleteContact in results) {
+             for (Contact* deletedContact in results) {
                  
-                 [_coreDataManager deleteWithEntity:deleteContact];
+                 [[CoreDataManager sharedInstance] deleteWithEntity:deletedContact];
                  break;
              }
             
@@ -313,7 +285,7 @@
             }];
          } failed:^(NSError* error) {
              
-             NSLog(@"reee");
+             NSLog(@"%@",error);
          }];
     }];
     
@@ -344,7 +316,7 @@
     
     if (_contacts.count > 0 && ![[_contacts objectAtIndex:0] managedObjectContext]) {
      
-        [_coreDataManager fetchWithEntity:CONTACT Predicate:nil success:^(NSArray* results) {
+        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:nil success:^(NSArray* results) {
             
             _contacts = results;
             
@@ -362,7 +334,7 @@
             
         } failed:^(NSError* error) {
             
-            NSLog(@"eeeee");
+            NSLog(@"%@",error);
         }];
     } else {
         
@@ -390,7 +362,7 @@
         
         ContactCellObject* cellObject = (ContactCellObject *)object;
         contactTableViewCell.identifier = cellObject.identifier;
-        contactTableViewCell.model = object;
+        [contactTableViewCell setModel:object];
         [cellObject getImageCacheForCell:contactTableViewCell];
         [contactTableViewCell shouldUpdateCellWithObject:object];
     }
