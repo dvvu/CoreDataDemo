@@ -99,7 +99,7 @@
 
 - (void)getImageForKey:(NSString *)key completionWith:(void(^)(UIImage* image))completion {
     
-    dispatch_sync(_cacheImageQueue, ^ {
+    dispatch_async(_cacheImageQueue, ^ {
         
         if (key) {
             

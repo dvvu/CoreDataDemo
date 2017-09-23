@@ -13,9 +13,9 @@
 
 @property (nonatomic) dispatch_queue_t photoPermissionQueue;
 @property (nonatomic) dispatch_queue_t defaultImageQueue;
-@property (nonatomic) dispatch_queue_t drawImageQueue;
-@property (nonatomic) dispatch_queue_t resizeImageQueue;
-
+@property (nonatomic) dispatch_queue_t imageDrawQueue;
+@property (nonatomic) dispatch_queue_t imageResizeQueue;
+@property (nonatomic) dispatch_queue_t imageFromFolderQueue;
 @end
 
 @implementation ImageSupporter
@@ -43,11 +43,64 @@
         
         _photoPermissionQueue = dispatch_queue_create("PHOTO_PERMISSION_QUEUE", DISPATCH_QUEUE_SERIAL);
         _defaultImageQueue = dispatch_queue_create("DEFAULT_IMAGE_QUEUE", DISPATCH_QUEUE_SERIAL);
-        _drawImageQueue = dispatch_queue_create("DRAW_IMAGE_QUEUE", DISPATCH_QUEUE_SERIAL);
-        _resizeImageQueue = dispatch_queue_create("RESIZE_IMAGE_QUEUE", DISPATCH_QUEUE_SERIAL);
+        _imageDrawQueue = dispatch_queue_create("IMAGE_DRAW_QUEUE", DISPATCH_QUEUE_SERIAL);
+        _imageResizeQueue = dispatch_queue_create("IMAGE_RESIZE_QUEUE", DISPATCH_QUEUE_SERIAL);
+        _imageFromFolderQueue = dispatch_queue_create("IMAGE_FROM_FOlDER_QUEUE", DISPATCH_QUEUE_SERIAL);
     }
     
     return self;
+}
+
+#pragma mark - getImageFromFoder
+
+- (void)getImageFromFolder:(NSString *)imageName completion:(void(^)(UIImage* image))compeltion {
+    
+    //Get image file from sand box using file name and file path
+    NSString* stringPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0]stringByAppendingPathComponent:@"ImageFolder"];
+    stringPath = [stringPath stringByAppendingPathComponent:imageName];
+    
+    UIImage* image = [UIImage imageWithContentsOfFile:stringPath];
+    
+    if (compeltion) {
+        
+        if (image) {
+            
+            compeltion(image);
+        } else {
+            compeltion(nil);
+        }
+    }
+}
+
+#pragma mark - storeImageToDirectory
+
+- (void)storeImageToFolder:(UIImage *)image withImageName:(NSString *)imageName {
+    
+    dispatch_async(_imageFromFolderQueue, ^ {
+   
+        // For error information
+        NSError* error;
+        NSFileManager* fileManager = [NSFileManager defaultManager];
+        
+        NSArray*paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString* documentsDirectory = [paths objectAtIndex:0]; // Get documents folder
+        NSString* dataPath = [documentsDirectory stringByAppendingPathComponent:@"ImageFolder"];
+        
+        if (![fileManager fileExistsAtPath:dataPath]) {
+            
+            [[NSFileManager defaultManager] createDirectoryAtPath:dataPath withIntermediateDirectories:NO attributes:nil error:&error];
+        }
+        
+        NSData* imageData = UIImagePNGRepresentation(image);
+        
+        NSString* imgfileName = [NSString stringWithFormat:@"%@%@", imageName, @".png"];
+        
+        // File we want to create in the documents directory
+        NSString* imgfilePath = [dataPath stringByAppendingPathComponent:imgfileName];
+        
+        // Write the file
+        [imageData writeToFile:imgfilePath atomically:YES];
+    });
 }
 
 #pragma mark - draw image circle

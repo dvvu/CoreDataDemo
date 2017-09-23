@@ -248,46 +248,56 @@
                  break;
              }
             
-            if (_contact.profileImageURL != _profileImageURL.absoluteString) {
-                
-                _contact.profileImageURL = _profileImageURL.absoluteString;
-                
-                [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[_contact profileImageURL]] completion:^(UIImage* image) {
-                    
-                    if (image) {
-                        
-                        [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:[_contact identifier]];
-                    }
-                }];
-            }
+//            if (_contact.profileImageURL != _profileImageURL.absoluteString) {
+//                
+//                _contact.profileImageURL = _profileImageURL.absoluteString;
+//                
+//                [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[_contact profileImageURL]] completion:^(UIImage* image) {
+//                    
+//                    if (image) {
+//                        
+//                        [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:[_contact identifier]];
+//                    }
+//                }];
+//            }
          } failed:^(NSError* error) {
              
              NSLog(@"%@",error);
          }];
     } else {
         
-//        for (int i = 0; i < 1000; i ++) {
+        Contact* contact = [[CoreDataManager sharedInstance] createInsertEntityWithClassName:CONTACT];
+        contact.firstName = _firstNameTextField.text;
+        contact.lastName = _lastNameTextField.text;
+        contact.phoneNumber = _phoneNumberTextField.text;
+        contact.company = _companyNameTextField.text;
+        contact.identifier = [[NSUUID UUID] UUIDString];
+        contact.profileImageURL = _profileImageURL.absoluteString;
         
-            Contact* contact = [[CoreDataManager sharedInstance] createInsertEntityWithClassName:CONTACT];
-            contact.firstName = _firstNameTextField.text;
-            contact.lastName = _lastNameTextField.text;
-            contact.phoneNumber = _phoneNumberTextField.text;
-            contact.company = _companyNameTextField.text;
-            contact.identifier = [[NSUUID UUID] UUIDString];
-            contact.profileImageURL = _profileImageURL.absoluteString;
+        if (_profileImageView.image) {
             
-            if (_profileImageURL.absoluteString) {
-                
-                [[ImageSupporter sharedInstance] getImagePickerwithURL:_profileImageURL completion:^(UIImage* image) {
-                    
-                    if (image) {
-                        
-                        [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:contact.identifier];
-                    }
-                }];
-            }
-//        }
+            [[ImageSupporter sharedInstance] storeImageToFolder:_profileImageView.image withImageName:contact.identifier];
+            [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:_profileImageView.image]] forKey:contact.identifier];
+        }
         
+        [[ImageSupporter sharedInstance] getImageFromFolder:contact.identifier completion:^(UIImage* image) {
+            
+            if (image) {
+                
+            }
+        }];
+   
+//        if (_profileImageURL.absoluteString) {
+//            
+//            [[ImageSupporter sharedInstance] getImagePickerwithURL:_profileImageURL completion:^(UIImage* image) {
+//                
+//                if (image) {
+//                    
+//                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:contact.identifier];
+//                }
+//            }];
+//        }
+
         [[CoreDataManager sharedInstance] save];
     }
     
@@ -306,7 +316,7 @@
         
         if (!errorString) {
             
-            UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+            UIImagePickerController* picker = [[UIImagePickerController alloc] init];
             picker.delegate = self;
             picker.allowsEditing = YES;
             picker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;

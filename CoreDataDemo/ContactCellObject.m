@@ -19,9 +19,9 @@
 
 - (void)getImageCacheForCell: (UITableViewCell *)cell {
     
-    __weak ContactTableViewCell* contactTableViewCell = (ContactTableViewCell *)cell;
-    
     [[ContactCache sharedInstance] getImageForKey:_identifier completionWith:^(UIImage* image) {
+        
+        __weak ContactTableViewCell* contactTableViewCell = (ContactTableViewCell *)cell;
         
         if (image) {
             

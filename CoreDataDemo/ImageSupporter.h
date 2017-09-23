@@ -23,6 +23,12 @@
 #pragma mark - checkPermissionPhoto
 - (void)checkPermissionPhoto:(void(^)(NSString *))completion;
 
+#pragma mark - storeImageToFolder
+- (void)storeImageToFolder:(UIImage *)image withImageName:(NSString *)imageName;
+
+#pragma mark - getImageFromFolder
+- (void)getImageFromFolder:(NSString *)imageName completion:(void(^)(UIImage* image))compeltion;
+
 #pragma mark - getImagePickerwithURL
 - (void)getImagePickerwithURL:(NSURL *)profileImageURL completion:(void(^)(UIImage *))completion;
 
