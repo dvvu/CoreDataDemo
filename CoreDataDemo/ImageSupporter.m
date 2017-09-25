@@ -13,8 +13,6 @@
 
 @property (nonatomic) dispatch_queue_t photoPermissionQueue;
 @property (nonatomic) dispatch_queue_t defaultImageQueue;
-@property (nonatomic) dispatch_queue_t imageDrawQueue;
-@property (nonatomic) dispatch_queue_t imageResizeQueue;
 @property (nonatomic) dispatch_queue_t imageFromFolderQueue;
 @end
 
@@ -43,8 +41,6 @@
         
         _photoPermissionQueue = dispatch_queue_create("PHOTO_PERMISSION_QUEUE", DISPATCH_QUEUE_SERIAL);
         _defaultImageQueue = dispatch_queue_create("DEFAULT_IMAGE_QUEUE", DISPATCH_QUEUE_SERIAL);
-        _imageDrawQueue = dispatch_queue_create("IMAGE_DRAW_QUEUE", DISPATCH_QUEUE_SERIAL);
-        _imageResizeQueue = dispatch_queue_create("IMAGE_RESIZE_QUEUE", DISPATCH_QUEUE_SERIAL);
         _imageFromFolderQueue = dispatch_queue_create("IMAGE_FROM_FOlDER_QUEUE", DISPATCH_QUEUE_CONCURRENT);
     }
     
@@ -67,9 +63,15 @@
             
             if (image) {
                 
-                compeltion(image);
+                dispatch_async(dispatch_get_main_queue(), ^ {
+                    
+                    compeltion(image);
+                });
             } else {
-                compeltion(nil);
+                dispatch_async(dispatch_get_main_queue(), ^ {
+                    
+                    compeltion(nil);
+                });
             }
         }
     });
@@ -262,13 +264,13 @@
     dispatch_async(_photoPermissionQueue, ^ {
     
         int imageWidth = 100;
-        int imageHeight =  100;
+        int imageHeight = 100;
         
         // Rect for image
         CGRect rect = CGRectMake(0,0,imageHeight,imageHeight);
         
         // setup text
-        UIFont* font = [UIFont systemFontOfSize: 50];
+        UIFont* font = [UIFont systemFontOfSize:35];
         CGSize textSize = [textNameDefault.uppercaseString sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:50]}];
         NSMutableAttributedString* nameAttString = [[NSMutableAttributedString alloc] initWithString:textNameDefault.uppercaseString];
         NSRange range = NSMakeRange(0, [nameAttString length]);
@@ -318,15 +320,15 @@
 
 - (UIImage *)profileImageDefault:(NSString *)textNameDefault {
 
-    int imageWidth = 100;
-    int imageHeight =  100;
+    int imageWidth = 70;
+    int imageHeight = 70;
     
     // Rect for image
     CGRect rect = CGRectMake(0,0,imageHeight,imageHeight);
     
     // setup text
-    UIFont* font = [UIFont systemFontOfSize: 50];
-    CGSize textSize = [textNameDefault.uppercaseString sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:50]}];
+    UIFont* font = [UIFont systemFontOfSize:30];
+    CGSize textSize = [textNameDefault.uppercaseString sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:35]}];
     NSMutableAttributedString* nameAttString = [[NSMutableAttributedString alloc] initWithString:textNameDefault.uppercaseString];
     NSRange range = NSMakeRange(0, [nameAttString length]);
     [nameAttString addAttribute:NSFontAttributeName value:font range:range];

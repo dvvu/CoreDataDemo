@@ -15,7 +15,7 @@
 #import "Masonry.h"
 #import "CoreDataManager.h"
 
-@interface AddContactViewController () <UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate>
+@interface AddContactViewController () <UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIAlertViewDelegate>
 
 @property (nonatomic) UITextField* companyNameTextField;
 @property (nonatomic) UITextField* phoneNumberTextField;
@@ -232,20 +232,21 @@
       
         [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate success:^(NSArray* results) {
             
-             for (Contact* updateContact in results) {
-                 
-                 updateContact.firstName = _firstNameTextField.text;
-                 updateContact.lastName = _lastNameTextField.text;
-                 updateContact.phoneNumber = _phoneNumberTextField.text;
-                 updateContact.company = _companyNameTextField.text;
-                 [[CoreDataManager sharedInstance] save];
-                 break;
-             }
-            
-            if (_isSelectedImage) {
+            Contact* updateContact = results[0];
+         
+            if (updateContact) {
+               
+                updateContact.firstName = _firstNameTextField.text;
+                updateContact.lastName = _lastNameTextField.text;
+                updateContact.phoneNumber = _phoneNumberTextField.text;
+                updateContact.company = _companyNameTextField.text;
+                [[CoreDataManager sharedInstance] save];
                 
-                [[ImageSupporter sharedInstance] storeImageToFolder:_profileImageView.image withImageName:_contact.identifier];
-                [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:_profileImageView.image]] forKey:_contact.identifier];
+                if (_isSelectedImage) {
+                    
+                    [[ImageSupporter sharedInstance] storeImageToFolder:_profileImageView.image withImageName:_contact.identifier];
+                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:_profileImageView.image]] forKey:_contact.identifier];
+                }
             }
          } failed:^(NSError* error) {
              
@@ -253,19 +254,22 @@
          }];
     } else {
 
-        Contact* contact = [[CoreDataManager sharedInstance] createInsertEntityWithClassName:CONTACT];
-        contact.firstName = _firstNameTextField.text;
-        contact.lastName = _lastNameTextField.text;
-        contact.phoneNumber = _phoneNumberTextField.text;
-        contact.company = _companyNameTextField.text;
-        contact.identifier = [[NSUUID UUID] UUIDString];;
-        
-        if (_isSelectedImage) {
+        for (int i = 0; i < 100; i++) {
             
-            [[ImageSupporter sharedInstance] storeImageToFolder:_profileImageView.image withImageName:contact.identifier];
-            [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:_profileImageView.image]] forKey:contact.identifier];
+            Contact* contact = [[CoreDataManager sharedInstance] createInsertEntityWithClassName:CONTACT];
+            contact.firstName = _firstNameTextField.text;
+            contact.lastName = _lastNameTextField.text;
+            contact.phoneNumber = _phoneNumberTextField.text;
+            contact.company = _companyNameTextField.text;
+            contact.identifier = [[NSUUID UUID] UUIDString];
+            
+            if (_isSelectedImage) {
+                
+                [[ImageSupporter sharedInstance] storeImageToFolder:_profileImageView.image withImageName:contact.identifier];
+                [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:_profileImageView.image]] forKey:contact.identifier];
+            }
         }
-        
+
         [[CoreDataManager sharedInstance] save];
       }
 
@@ -290,6 +294,9 @@
             picker.allowsEditing = YES;
             picker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
             [self presentViewController:picker animated:YES completion:nil];
+        } else {
+            
+            [[[UIAlertView alloc] initWithTitle:errorString message: @"Please! Enable to use" delegate:self cancelButtonTitle:@"CLOSE" otherButtonTitles:@"GO TO SETTING", nil] show];
         }
     }];
 }
@@ -425,4 +432,14 @@
     }
 }
 
+#pragma mark - UIAlertViewDelegate
+
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
+    
+    // gotosetting
+    if (buttonIndex == 1) {
+        
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]];
+    }
+}
 @end

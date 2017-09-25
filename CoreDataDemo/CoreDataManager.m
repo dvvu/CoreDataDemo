@@ -59,7 +59,7 @@
 #pragma mark - createInsertEntityWithClassName
 
 - (id)createInsertEntityWithClassName:(NSString *)className {
-    
+  
     return [NSEntityDescription insertNewObjectForEntityForName:className inManagedObjectContext:_managedObjectContext];
 }
 
@@ -83,7 +83,9 @@
         NSFetchRequest* request = [NSFetchRequest new];
         NSEntityDescription* entity = [NSEntityDescription entityForName:entityClass inManagedObjectContext:_managedObjectContext];
         [request setEntity:entity];
-        [request setSortDescriptors:@[[[NSSortDescriptor alloc] initWithKey:@"firstName" ascending:YES]]];
+        NSSortDescriptor* sortFirstName = [[NSSortDescriptor alloc] initWithKey:@"firstName" ascending:YES];
+        NSSortDescriptor* sortLastName = [[NSSortDescriptor alloc] initWithKey:@"lastName" ascending:YES];
+        [request setSortDescriptors:@[sortFirstName,sortLastName]];
         
         if (predicate) {
             
@@ -95,6 +97,41 @@
    
         dispatch_async(dispatch_get_main_queue(), ^ {
         
+            if (error) {
+                
+                failed(error);
+            } else {
+                success(results);
+            }
+        });
+    });
+}
+
+#pragma mark - getEntityWithClass
+
+- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate fromIndex:(int)index resultLimit:(int)limit success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
+    
+    dispatch_async(_contactStoreQueue, ^ {
+        
+        NSFetchRequest* request = [NSFetchRequest new];
+        NSEntityDescription* entity = [NSEntityDescription entityForName:entityClass inManagedObjectContext:_managedObjectContext];
+        [request setEntity:entity];
+        NSSortDescriptor* sortFirstName = [[NSSortDescriptor alloc] initWithKey:@"firstName" ascending:YES];
+        NSSortDescriptor* sortLastName = [[NSSortDescriptor alloc] initWithKey:@"lastName" ascending:YES];
+        [request setSortDescriptors:@[sortFirstName,sortLastName]];
+        request.fetchLimit = limit;
+        request.fetchOffset = index;
+        
+        if (predicate) {
+            
+            [request setPredicate:predicate];
+        }
+    
+        NSError* error;
+        NSArray* results = [_managedObjectContext executeFetchRequest:request error:&error];
+        
+        dispatch_async(dispatch_get_main_queue(), ^ {
+            
             if (error) {
                 
                 failed(error);
@@ -147,7 +184,7 @@
     NSError* error = nil;
     
     _persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModelWithCoreDataName:coreDataName]];
-    
+ 
     if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error]) {
         
         abort();

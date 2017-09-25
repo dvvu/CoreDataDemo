@@ -31,6 +31,7 @@
 @property (nonatomic) NIMutableTableViewModel* model;
 @property (nonatomic) dispatch_queue_t contactQueue;
 @property (nonatomic) UITableView* tableView;
+@property (nonatomic) int pageNumber;
 
 @end
 
@@ -51,6 +52,7 @@
 
 - (void)setupLayout {
 
+    _pageNumber = 0;
     _tableView = [[UITableView alloc] init];
     _tableView.contentInset = UIEdgeInsetsMake(0, -7, 0, 0);
     [self.view addSubview:_tableView];
@@ -73,7 +75,6 @@
     _imageCahceQueue = dispatch_queue_create("IMAGE_CAHCES_QUEUE", DISPATCH_QUEUE_SERIAL);
     
     [[CoreDataManager sharedInstance] initSettingWithCoreDataName:@"CoreDataDemo" sqliteName:@"CoreDataDemoSqlite"];
-    
     [_tableView registerClass:[ContactTableViewCell class] forCellReuseIdentifier:@"ContactTableViewCell"];
     _tableView.delegate = self;
 }
@@ -150,7 +151,7 @@
             if ([name length] > 0) {
                 
                 firstChar = [name substringToIndex:1];
-            } else {
+            } else if ([contact phoneNumber]) {
                 
                 firstChar = [[contact phoneNumber] substringToIndex:1];
             }
@@ -176,7 +177,7 @@
                 }
                 
                 NSString* nameDefault = [NSString stringWithFormat:@"%@%@",firstChar,lastChar];
-                cellObject.contactImage = [[ImageSupporter sharedInstance] profileImageDefault:nameDefault];;
+                cellObject.image = [[ImageSupporter sharedInstance] profileImageDefault:nameDefault];
                 [_model addObject:cellObject toSection:range.location];
             }
         }];
@@ -241,15 +242,14 @@
 
 - (NSArray *)tableView:(UITableView *)tableView editActionsForRowAtIndexPath:(NSIndexPath *)indexPath {
     
-    id object = [_model objectAtIndexPath:indexPath];
-    Contact* contact = (Contact *)object;
+    ContactCellObject* object = [_model objectAtIndexPath:indexPath];
     
     UITableViewRowAction* eidtButton = [UITableViewRowAction rowActionWithStyle:UITableViewRowActionStyleDefault title:@"Edit" handler:^(UITableViewRowAction* action, NSIndexPath* indexPath) {
         
         [tableView setEditing:NO];
         AddContactViewController* addContactViewController = [self.storyboard instantiateViewControllerWithIdentifier:@"AddContactViewController"];
         [self.navigationController pushViewController:addContactViewController animated:YES];
-        addContactViewController.contact = contact;
+        addContactViewController.contact = object;
     }];
     
     eidtButton.backgroundColor = [UIColor lightGrayColor];
@@ -258,23 +258,23 @@
         
         [tableView setEditing:NO];
         
-        NSPredicate* predicate = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:@"identifier" searchValue:[contact identifier]];
+        NSPredicate* predicate = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:@"identifier" searchValue:[object identifier]];
         
         [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate success:^(NSArray* results) {
             
              // delete entity
-             for (Contact* deletedContact in results) {
-                 
-                 [[CoreDataManager sharedInstance] deleteWithEntity:deletedContact];
-                 break;
-             }
-            
-            [[ImageSupporter sharedInstance] removeImageFromFolder:[contact identifier]];
-            
-            [[ContactCache sharedInstance] removeImageForKey:[contact identifier] completionWith:^{
-            
-                [self loadDataFromCoreData];
-            }];
+            Contact* deletedContact = results[0];
+          
+            if (deletedContact) {
+             
+                [[CoreDataManager sharedInstance] deleteWithEntity:deletedContact];
+                [[ImageSupporter sharedInstance] removeImageFromFolder:[object identifier]];
+                
+                [[ContactCache sharedInstance] removeImageForKey:[object identifier] completionWith:^{
+                    
+                    [self loadDataFromCoreData];
+                }];
+            }
          } failed:^(NSError* error) {
              
              NSLog(@"%@",error);
@@ -357,6 +357,18 @@
         [contactTableViewCell setModel:object];
         [cellObject getImageCacheForCell:contactTableViewCell];
         [contactTableViewCell shouldUpdateCellWithObject:object];
+        
+        int numberItem = 0;
+      
+        for (int i = 0; i < indexPath.section; i++) {
+            
+            numberItem += [tableView numberOfRowsInSection:i];
+        }
+        numberItem += indexPath.row;
+        
+        if (numberItem > _pageNumber * 10) {
+            
+        }
     }
     
     return contactTableViewCell;
@@ -382,9 +394,6 @@
         
         [[[UIAlertView alloc] initWithTitle:@"Do you want to call?" message: cellObject.phoneNumber delegate:self cancelButtonTitle:@"Call" otherButtonTitles:@"Close", nil] show];
     }
-    
-    ContactCellObject* object = [_model objectAtIndexPath:indexPath];
-    Contact* contact = (Contact *)object;
     
     [UIView animateWithDuration:0.2 animations: ^ {
         

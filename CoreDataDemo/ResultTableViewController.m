@@ -83,6 +83,11 @@
     
     ContactCellObject* cellObject = [_model objectAtIndexPath:indexPath];
     
+    if (cellObject.phoneNumber) {
+        
+        [[[UIAlertView alloc] initWithTitle:@"Do you want to call?" message: cellObject.phoneNumber delegate:self cancelButtonTitle:@"Call" otherButtonTitles:@"Close", nil] show];
+    }
+    
     [UIView animateWithDuration:0.2 animations: ^ {
         
         [tableView deselectRowAtIndexPath:indexPath animated:YES];

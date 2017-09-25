@@ -32,6 +32,6 @@
 - (instancetype)init;
 
 #pragma mark - enumerateObjectsUsingBlock
-- (void)enumerateObjectsUsingBlock:(void (^)(id object, NSUInteger idx, BOOL *stop))block;
+- (void)enumerateObjectsUsingBlock:(void (^)(id object, NSUInteger idx, BOOL* stop))block;
 
 @end

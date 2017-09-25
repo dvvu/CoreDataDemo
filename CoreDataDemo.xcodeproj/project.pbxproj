@@ -300,7 +300,8 @@
 				EA25713F1F710C93007752BA /* ContactEntities+CoreDataProperties */,
 				EA2571201F70BB06007752BA /* ContactCahe */,
 				EA2570B91F70BA20007752BA /* ThreadSafeForMutableArray */,
-				EA25712C1F70BC15007752BA /* ContactsStoreManager */,
+				EA25712C1F70BC15007752BA /* CoreDataManager */,
+				EABFD2391F78ADB400361A64 /* ViewController */,
 				EA2570911F70BA0D007752BA /* Supporting Files */,
 			);
 			path = CoreDataDemo;
@@ -451,19 +452,13 @@
 			name = ContactCells;
 			sourceTree = "<group>";
 		};
-		EA25712C1F70BC15007752BA /* ContactsStoreManager */ = {
+		EA25712C1F70BC15007752BA /* CoreDataManager */ = {
 			isa = PBXGroup;
 			children = (
-				EA2571331F70BE64007752BA /* ResultTableViewController.h */,
-				EA2571341F70BE64007752BA /* ResultTableViewController.m */,
-				EA2571301F70BC5C007752BA /* AddContactViewController.h */,
-				EA2571311F70BC5C007752BA /* AddContactViewController.m */,
-				EA2570971F70BA0D007752BA /* ViewController.h */,
-				EA2570981F70BA0D007752BA /* ViewController.m */,
 				EA2BE87F1F74B62500AD0D56 /* CoreDataManager.h */,
 				EA2BE8801F74B62500AD0D56 /* CoreDataManager.m */,
 			);
-			name = ContactsStoreManager;
+			name = CoreDataManager;
 			sourceTree = "<group>";
 		};
 		EA25713F1F710C93007752BA /* ContactEntities+CoreDataProperties */ = {
@@ -477,6 +472,19 @@
 				EA2571371F70BF43007752BA /* ContactEntity.m */,
 			);
 			name = "ContactEntities+CoreDataProperties";
+			sourceTree = "<group>";
+		};
+		EABFD2391F78ADB400361A64 /* ViewController */ = {
+			isa = PBXGroup;
+			children = (
+				EA2571331F70BE64007752BA /* ResultTableViewController.h */,
+				EA2571341F70BE64007752BA /* ResultTableViewController.m */,
+				EA2571301F70BC5C007752BA /* AddContactViewController.h */,
+				EA2571311F70BC5C007752BA /* AddContactViewController.m */,
+				EA2570971F70BA0D007752BA /* ViewController.h */,
+				EA2570981F70BA0D007752BA /* ViewController.m */,
+			);
+			name = ViewController;
 			sourceTree = "<group>";
 		};
 		EAD583A41F728C7800D2592F /* imageSupporter */ = {
