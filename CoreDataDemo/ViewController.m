@@ -30,7 +30,6 @@
 @property (nonatomic) dispatch_queue_t imageCahceQueue;
 @property (nonatomic) NIMutableTableViewModel* model;
 @property (nonatomic) dispatch_queue_t contactQueue;
-@property (nonatomic) NSDictionary* cellObjects;
 @property (nonatomic) UITableView* tableView;
 
 @end
@@ -77,7 +76,6 @@
     
     [_tableView registerClass:[ContactTableViewCell class] forCellReuseIdentifier:@"ContactTableViewCell"];
     _tableView.delegate = self;
-    [_model setSectionIndexType:NITableViewModelSectionIndexDynamic showsSearch:YES showsSummary:NO];
 }
 
 #pragma mark - viewDidAppear
@@ -112,9 +110,9 @@
     
     dispatch_async(_contactQueue, ^ {
         
-        _model = [[NIMutableTableViewModel alloc] initWithDelegate:self];
-        
         __block NSString* groupNameContact = @"";
+        _model = [[NIMutableTableViewModel alloc] initWithDelegate:self];
+        [_model setSectionIndexType:NITableViewModelSectionIndexDynamic showsSearch:NO showsSummary:NO];
         
         [_contacts enumerateObjectsUsingBlock:^(Contact* _Nonnull contact, NSUInteger idx, BOOL * _Nonnull stop) {
             
@@ -137,8 +135,7 @@
         }];
         
         int characterGroupNameCount = (int)[groupNameContact length];
-        NSMutableDictionary* objectsDict = [[NSMutableDictionary alloc] init];
-        
+
         [_contacts enumerateObjectsUsingBlock:^(Contact* _Nonnull contact, NSUInteger idx, BOOL * _Nonnull stop) {
             
             if (idx < characterGroupNameCount) {
@@ -169,7 +166,6 @@
                 cellObject.identifier = [contact identifier];
                 cellObject.phoneNumber = [contact phoneNumber];
                 cellObject.company = [contact company];
-                cellObject.profileImageURL = [contact profileImageURL];
                 NSLog(@"i: %@",cellObject.identifier);
                 
                 NSString* lastChar = @"";
@@ -180,17 +176,11 @@
                 }
                 
                 NSString* nameDefault = [NSString stringWithFormat:@"%@%@",firstChar,lastChar];
-                [[ImageSupporter sharedInstance] profileImageDefault:nameDefault completion:^(UIImage* imageDefault) {
-                    
-                    cellObject.contactImage = imageDefault;
-                }];
-
-                objectsDict[cellObject.identifier] = cellObject;
+                cellObject.contactImage = [[ImageSupporter sharedInstance] profileImageDefault:nameDefault];;
                 [_model addObject:cellObject toSection:range.location];
             }
         }];
         
-        _cellObjects = objectsDict;
         [_model updateSectionIndex];
         _tableView.dataSource = _model;
         
@@ -268,7 +258,7 @@
         
         [tableView setEditing:NO];
         
-        NSPredicate* predicate = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:CONTACT searchValue:[contact identifier]];
+        NSPredicate* predicate = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:@"identifier" searchValue:[contact identifier]];
         
         [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate success:^(NSArray* results) {
             
@@ -279,8 +269,10 @@
                  break;
              }
             
+            [[ImageSupporter sharedInstance] removeImageFromFolder:[contact identifier]];
+            
             [[ContactCache sharedInstance] removeImageForKey:[contact identifier] completionWith:^{
-                
+            
                 [self loadDataFromCoreData];
             }];
          } failed:^(NSError* error) {
@@ -390,6 +382,9 @@
         
         [[[UIAlertView alloc] initWithTitle:@"Do you want to call?" message: cellObject.phoneNumber delegate:self cancelButtonTitle:@"Call" otherButtonTitles:@"Close", nil] show];
     }
+    
+    ContactCellObject* object = [_model objectAtIndexPath:indexPath];
+    Contact* contact = (Contact *)object;
     
     [UIView animateWithDuration:0.2 animations: ^ {
         

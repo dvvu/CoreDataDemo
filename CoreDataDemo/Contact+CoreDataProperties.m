@@ -19,6 +19,5 @@
 @dynamic identifier;
 @dynamic lastName;
 @dynamic phoneNumber;
-@dynamic profileImageURL;
 
 @end

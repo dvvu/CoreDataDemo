@@ -34,15 +34,12 @@
             }
         } else {
             
-            [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:_profileImageURL] completion:^(UIImage* image) {
+            [[ImageSupporter sharedInstance] getImageFromFolder:_identifier completion:^(UIImage* image) {
                 
                 if (image) {
                     
-                    image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:image]];
-                   
                     [[ContactCache sharedInstance] setImageForKey:image forKey:_identifier];
                     
-                    // Run on main Thread
                     if ([_identifier isEqualToString:contactTableViewCell.identifier]) {
                         
                         dispatch_async(dispatch_get_main_queue(), ^ {

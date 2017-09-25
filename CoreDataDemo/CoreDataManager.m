@@ -92,13 +92,16 @@
 
         NSError* error;
         NSArray* results = [_managedObjectContext executeFetchRequest:request error:&error];
+   
+        dispatch_async(dispatch_get_main_queue(), ^ {
         
-        if (error) {
-            
-            failed(error);
-        } else {
-            success(results);
-        }
+            if (error) {
+                
+                failed(error);
+            } else {
+                success(results);
+            }
+        });
     });
 }
 

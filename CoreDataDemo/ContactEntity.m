@@ -26,5 +26,4 @@
     return [validatePhoneNumber evaluateWithObject:phoneNumber];
 }
 
-
 @end

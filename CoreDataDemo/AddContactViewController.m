@@ -26,9 +26,9 @@
 @property (nonatomic) UIImageView* profileImageView;
 @property (nonatomic) UIImageView* phoneImageView;
 @property (nonatomic) CGFloat phoneNumberOrginY;
-@property (nonatomic) NSURL* profileImageURL;
 @property (nonatomic) UIButton* doneButton;
 @property (nonatomic) UILabel* phoneLabel;
+@property (nonatomic) BOOL isSelectedImage;
 
 @end
 
@@ -185,20 +185,15 @@
         [_lastNameTextField setText:[_contact lastName]];
         [_companyNameTextField setText:[_contact company]];
         [_phoneNumberTextField setText:[_contact phoneNumber]];
-        _profileImageURL = [NSURL URLWithString:[_contact profileImageURL]];
-        
         [self phoneTextFieldDidChange:_phoneNumberTextField];
         
-        if ([_contact profileImageURL]) {
+        [[ContactCache sharedInstance] getImageForKey:[_contact identifier] completionWith:^(UIImage* image) {
             
-            [[ContactCache sharedInstance] getImageForKey:[_contact identifier] completionWith:^(UIImage* image) {
+            if (image) {
                 
-                if (image) {
-                    
-                    _profileImageView.image = image;
-                }
-            }];
-        }
+                _profileImageView.image = image;
+            }
+        }];
     }
 }
 
@@ -233,9 +228,9 @@
     
     if (_contact) {
 
-        NSPredicate* pred = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:@"identifier" searchValue:[_contact identifier]];
+        NSPredicate* predicate = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:@"identifier" searchValue:[_contact identifier]];
       
-        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:pred success:^(NSArray* results) {
+        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate success:^(NSArray* results) {
             
              for (Contact* updateContact in results) {
                  
@@ -243,64 +238,38 @@
                  updateContact.lastName = _lastNameTextField.text;
                  updateContact.phoneNumber = _phoneNumberTextField.text;
                  updateContact.company = _companyNameTextField.text;
-                 updateContact.profileImageURL = _profileImageURL.absoluteString;
                  [[CoreDataManager sharedInstance] save];
                  break;
              }
             
-//            if (_contact.profileImageURL != _profileImageURL.absoluteString) {
-//                
-//                _contact.profileImageURL = _profileImageURL.absoluteString;
-//                
-//                [[ImageSupporter sharedInstance] getImagePickerwithURL:[NSURL URLWithString:[_contact profileImageURL]] completion:^(UIImage* image) {
-//                    
-//                    if (image) {
-//                        
-//                        [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:[_contact identifier]];
-//                    }
-//                }];
-//            }
+            if (_isSelectedImage) {
+                
+                [[ImageSupporter sharedInstance] storeImageToFolder:_profileImageView.image withImageName:_contact.identifier];
+                [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:_profileImageView.image]] forKey:_contact.identifier];
+            }
          } failed:^(NSError* error) {
              
              NSLog(@"%@",error);
          }];
     } else {
-        
+
         Contact* contact = [[CoreDataManager sharedInstance] createInsertEntityWithClassName:CONTACT];
         contact.firstName = _firstNameTextField.text;
         contact.lastName = _lastNameTextField.text;
         contact.phoneNumber = _phoneNumberTextField.text;
         contact.company = _companyNameTextField.text;
-        contact.identifier = [[NSUUID UUID] UUIDString];
-        contact.profileImageURL = _profileImageURL.absoluteString;
+        contact.identifier = [[NSUUID UUID] UUIDString];;
         
-        if (_profileImageView.image) {
+        if (_isSelectedImage) {
             
             [[ImageSupporter sharedInstance] storeImageToFolder:_profileImageView.image withImageName:contact.identifier];
             [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:_profileImageView.image]] forKey:contact.identifier];
         }
         
-        [[ImageSupporter sharedInstance] getImageFromFolder:contact.identifier completion:^(UIImage* image) {
-            
-            if (image) {
-                
-            }
-        }];
-   
-//        if (_profileImageURL.absoluteString) {
-//            
-//            [[ImageSupporter sharedInstance] getImagePickerwithURL:_profileImageURL completion:^(UIImage* image) {
-//                
-//                if (image) {
-//                    
-//                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:image]] forKey:contact.identifier];
-//                }
-//            }];
-//        }
-
         [[CoreDataManager sharedInstance] save];
-    }
-    
+      }
+
+    // add and reload need to update 1 cell
     ViewController* viewController = (ViewController *)[self.navigationController.viewControllers objectAtIndex:0];
     viewController.needReload = YES;
     [self.navigationController popToRootViewControllerAnimated:YES];
@@ -330,8 +299,12 @@
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
     
     UIImage* chosenImage = info[UIImagePickerControllerEditedImage];
-    _profileImageURL = (NSURL *)[info valueForKey:UIImagePickerControllerReferenceURL];
-    _profileImageView.image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:chosenImage]];
+    
+    if (chosenImage) {
+        
+        _isSelectedImage = YES;
+        _profileImageView.image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:chosenImage]];
+    }
     
     [picker dismissViewControllerAnimated:YES completion:nil];
 }

@@ -20,7 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nullable, nonatomic, copy) NSString *identifier;
 @property (nullable, nonatomic, copy) NSString *lastName;
 @property (nullable, nonatomic, copy) NSString *phoneNumber;
-@property (nullable, nonatomic, copy) NSString *profileImageURL;
 
 @end
 

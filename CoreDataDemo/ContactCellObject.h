@@ -11,7 +11,6 @@
 @protocol ContactModelProtocol <NSObject>
 
 @property (readonly, nonatomic, copy) NSString* identifier;
-@property (readonly, nonatomic, copy) NSString* profileImageURL;
 @property (readonly, nonatomic, copy) NSString* firstName;
 @property (readonly, nonatomic, copy) NSString* lastName;
 @property (readonly, nonatomic, copy) NSString* phoneNumber;
@@ -22,7 +21,6 @@
 
 @interface ContactCellObject : NITitleCellObject <ContactModelProtocol>
 
-@property (nonatomic, copy) NSString* profileImageURL;
 @property (nonatomic, copy) NSString* firstName;
 @property (nonatomic, copy) NSString* lastName;
 @property (nonatomic, copy) NSString* phoneNumber;

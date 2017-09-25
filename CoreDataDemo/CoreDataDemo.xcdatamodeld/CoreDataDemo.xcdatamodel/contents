@@ -6,9 +6,8 @@
         <attribute name="identifier" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="lastName" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="phoneNumber" optional="YES" attributeType="String" syncable="YES"/>
-        <attribute name="profileImageURL" optional="YES" attributeType="String" syncable="YES"/>
     </entity>
     <elements>
-        <element name="Contact" positionX="-3339" positionY="-702" width="128" height="135"/>
+        <element name="Contact" positionX="-3339" positionY="-702" width="128" height="120"/>
     </elements>
 </model>

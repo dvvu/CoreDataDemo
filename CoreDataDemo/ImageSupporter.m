@@ -45,7 +45,7 @@
         _defaultImageQueue = dispatch_queue_create("DEFAULT_IMAGE_QUEUE", DISPATCH_QUEUE_SERIAL);
         _imageDrawQueue = dispatch_queue_create("IMAGE_DRAW_QUEUE", DISPATCH_QUEUE_SERIAL);
         _imageResizeQueue = dispatch_queue_create("IMAGE_RESIZE_QUEUE", DISPATCH_QUEUE_SERIAL);
-        _imageFromFolderQueue = dispatch_queue_create("IMAGE_FROM_FOlDER_QUEUE", DISPATCH_QUEUE_SERIAL);
+        _imageFromFolderQueue = dispatch_queue_create("IMAGE_FROM_FOlDER_QUEUE", DISPATCH_QUEUE_CONCURRENT);
     }
     
     return self;
@@ -55,35 +55,38 @@
 
 - (void)getImageFromFolder:(NSString *)imageName completion:(void(^)(UIImage* image))compeltion {
     
-    //Get image file from sand box using file name and file path
-    NSString* stringPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0]stringByAppendingPathComponent:@"ImageFolder"];
-    stringPath = [stringPath stringByAppendingPathComponent:imageName];
-    
-    UIImage* image = [UIImage imageWithContentsOfFile:stringPath];
-    
-    if (compeltion) {
+    dispatch_async(_imageFromFolderQueue, ^ {
         
-        if (image) {
+        //Get image file from sand box using file name and file path
+        NSString* stringPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0]stringByAppendingPathComponent:@"ImageFolder"];
+        stringPath = [stringPath stringByAppendingPathComponent:imageName];
+        
+        UIImage* image = [UIImage imageWithContentsOfFile:stringPath];
+        
+        if (compeltion) {
             
-            compeltion(image);
-        } else {
-            compeltion(nil);
+            if (image) {
+                
+                compeltion(image);
+            } else {
+                compeltion(nil);
+            }
         }
-    }
+    });
 }
 
 #pragma mark - storeImageToDirectory
 
 - (void)storeImageToFolder:(UIImage *)image withImageName:(NSString *)imageName {
     
-    dispatch_async(_imageFromFolderQueue, ^ {
+    dispatch_barrier_async(_imageFromFolderQueue, ^ {
    
         // For error information
         NSError* error;
         NSFileManager* fileManager = [NSFileManager defaultManager];
         
-        NSArray*paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-        NSString* documentsDirectory = [paths objectAtIndex:0]; // Get documents folder
+        NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString* documentsDirectory = [paths objectAtIndex:0];
         NSString* dataPath = [documentsDirectory stringByAppendingPathComponent:@"ImageFolder"];
         
         if (![fileManager fileExistsAtPath:dataPath]) {
@@ -100,6 +103,29 @@
         
         // Write the file
         [imageData writeToFile:imgfilePath atomically:YES];
+    });
+}
+
+#pragma mark - removeImageFromFolder
+
+- (void)removeImageFromFolder:(NSString *)imageName {
+    
+    dispatch_barrier_async(_imageFromFolderQueue, ^ {
+        
+        // For error information
+        NSError* error;
+        NSFileManager* fileManager = [NSFileManager defaultManager];
+        
+        NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString* documentsDirectory = [paths objectAtIndex:0];
+        NSString* dataPath = [documentsDirectory stringByAppendingPathComponent:@"ImageFolder"];
+        
+        NSString* imagwNamePath = [NSString stringWithFormat:@"%@/%@%@", dataPath, imageName, @".png"];
+        
+        if ([fileManager fileExistsAtPath:dataPath]) {
+            
+            [fileManager removeItemAtPath:imagwNamePath error:&error];
+        }
     });
 }
 
@@ -229,35 +255,6 @@
     });
 }
 
-#pragma mark - getImagePickerwithURL
-
-- (void)getImagePickerwithURL:(NSURL *)profileImageURL completion:(void(^)(UIImage *))completion {
-    
-    ALAssetsLibrary* library = [[ALAssetsLibrary alloc] init];
-
-    [library assetForURL:profileImageURL resultBlock:^(ALAsset* asset) {
-
-        UIImage* image = [UIImage imageWithCGImage:[[asset defaultRepresentation] fullResolutionImage]];
-
-        if (completion) {
-        
-            dispatch_async(dispatch_get_main_queue(), ^{
-                
-                completion(image);
-            });
-        }
-    } failureBlock:^(NSError* error) {
-
-        if (completion) {
-            
-            dispatch_async(dispatch_get_main_queue(), ^{
-                
-                completion(nil);
-            });
-        }
-    }];
-}
-
 #pragma mark - profileImageDefault
 
 - (void)profileImageDefault:(NSString *)textNameDefault completion:(void(^)(UIImage *))completion {
@@ -315,6 +312,56 @@
             });
         }
     });
+}
+
+#pragma mark - profileImageDefault
+
+- (UIImage *)profileImageDefault:(NSString *)textNameDefault {
+
+    int imageWidth = 100;
+    int imageHeight =  100;
+    
+    // Rect for image
+    CGRect rect = CGRectMake(0,0,imageHeight,imageHeight);
+    
+    // setup text
+    UIFont* font = [UIFont systemFontOfSize: 50];
+    CGSize textSize = [textNameDefault.uppercaseString sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:50]}];
+    NSMutableAttributedString* nameAttString = [[NSMutableAttributedString alloc] initWithString:textNameDefault.uppercaseString];
+    NSRange range = NSMakeRange(0, [nameAttString length]);
+    [nameAttString addAttribute:NSFontAttributeName value:font range:range];
+    [nameAttString addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:range];
+    
+    // Create image
+    CGSize imageSize = CGSizeMake(imageWidth, imageHeight);
+    UIColor* fillColor = [UIColor lightGrayColor];
+    
+    // Begin ImageContext Options
+    UIGraphicsBeginImageContextWithOptions(imageSize, YES, 0);
+    
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    [fillColor setFill];
+    CGContextFillRect(context, CGRectMake(0, 0, imageSize.width, imageSize.height));
+    UIImage* image = UIGraphicsGetImageFromCurrentImageContext();
+    
+    // Begin ImageContext
+    UIGraphicsBeginImageContext(rect.size);
+    
+    //  Draw Circle image
+    [[UIBezierPath bezierPathWithRoundedRect:rect cornerRadius:imageWidth/2] addClip];
+    [image drawInRect:rect];
+    
+    // Draw text
+    [nameAttString drawInRect:CGRectIntegral(CGRectMake(imageWidth/2 - textSize.width/2, imageHeight/2 - textSize.height/2, imageWidth, imageHeight))];
+    UIImage* profileImageDefault = UIGraphicsGetImageFromCurrentImageContext();
+    
+    // End ImageContext
+    UIGraphicsEndImageContext();
+    
+    // End ImageContext Options
+    UIGraphicsEndImageContext();
+    
+    return profileImageDefault;
 }
 
 @end
