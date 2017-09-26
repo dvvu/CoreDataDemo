@@ -23,10 +23,10 @@ typedef void (^CoreDataSaveSuccess)();
 + (CoreDataManager *)sharedInstance;
 
 #pragma mark - getEntityWithClass
-- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed;
+- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed;
 
 #pragma mark - getEntityWithClass
-- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate fromIndex:(int)index resultsLimit:(int)limit success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed;
+- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate fromIndex:(int)index resultsLimit:(int)limit callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed;
 
 #pragma mark - insert
 - (id)createInsertEntityWithClassName:(NSString *)className;

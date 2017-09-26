@@ -230,7 +230,7 @@
 
         NSPredicate* predicate = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:@"identifier" searchValue:[_contact identifier]];
       
-        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate success:^(NSArray* results) {
+        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate callbackQueue:nil success:^(NSArray* results) {
             
             Contact* updateContact = results[0];
          

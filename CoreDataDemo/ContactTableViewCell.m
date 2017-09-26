@@ -7,12 +7,14 @@
 //
 
 #import "ContactTableViewCell.h"
-#import "Constants.h"
 #import "Masonry.h"
+
 #define CELLHEIGHT 70
 
 @interface ContactTableViewCell ()
 
+@property (nonatomic) UIAttachmentBehavior* springBehavior;
+@property (nonatomic) UIDynamicAnimator* dynamicAnimator;
 @property (nonatomic) UIView* containView;
 
 @end
@@ -56,6 +58,27 @@
     _phoneNumber.text = object.phoneNumber;
     _company.text = object.company;
     return YES;
+}
+
+- (void)animateBounce:(CGPoint)touchLocation withOrientation:(ScrollOrientation)orienatation {
+    
+    if (![[_dynamicAnimator behaviors] containsObject:_springBehavior]) {
+        
+        [_dynamicAnimator addBehavior:_springBehavior];
+    }
+    
+    CGPoint anchorPoint = self.center;
+    
+    _springBehavior.anchorPoint = anchorPoint;
+    
+    CGFloat distanceFromTouch = fabs(touchLocation.y - anchorPoint.y);
+    CGFloat scrollResistance = distanceFromTouch / 100;
+    CGPoint center = self.center;
+    
+    center.y += 10 * orienatation * scrollResistance;
+    self.center = center;
+    
+    [_dynamicAnimator updateItemUsingCurrentState:self];
 }
 
 #pragma mark - setModel
@@ -124,6 +147,17 @@
         make.centerY.equalTo(_containView);
         make.right.equalTo(_containView.mas_right).offset(-8);
     }];
+    
+    if(!self.springBehavior) {
+        
+        _springBehavior = [[UIAttachmentBehavior alloc] initWithItem:self attachedToAnchor:self.center];
+        _springBehavior.length = 0;
+        _springBehavior.damping = 0.8;
+        _springBehavior.frequency = 1;
+        
+        _dynamicAnimator = [[UIDynamicAnimator alloc] init];
+        [_dynamicAnimator addBehavior:self.springBehavior];
+    }
 }
 
 #pragma mark - heightForObject NI delegate

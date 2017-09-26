@@ -8,8 +8,11 @@
 
 #import "ContactCellObject.h"
 #import <UIKit/UIKit.h>
+#import "Constants.h"
 
 @interface ContactTableViewCell : UITableViewCell <NICell>
+
+- (void)animateBounce:(CGPoint)touchLocation withOrientation:(ScrollOrientation)orienatation;
 
 @property (nonatomic) id<ContactModelProtocol>model;
 @property (nonatomic) UIImageView* profileImageView;

@@ -76,7 +76,7 @@
 
 #pragma mark - getEntityWithClass
 
-- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
+- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
    
     dispatch_async(_contactStoreQueue, ^ {
        
@@ -95,21 +95,35 @@
         NSError* error;
         NSArray* results = [_managedObjectContext executeFetchRequest:request error:&error];
    
-        dispatch_async(dispatch_get_main_queue(), ^ {
-        
-            if (error) {
+        if (queue) {
+            
+            dispatch_async(queue, ^ {
                 
-                failed(error);
-            } else {
-                success(results);
-            }
-        });
+                if (error) {
+                    
+                    failed(error);
+                } else {
+                    success(results);
+                }
+            });
+        } else {
+            
+            dispatch_async(dispatch_get_main_queue(), ^ {
+                
+                if (error) {
+                    
+                    failed(error);
+                } else {
+                    success(results);
+                }
+            });
+        }
     });
 }
 
 #pragma mark - getEntityWithClass
 
-- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate fromIndex:(int)index resultsLimit:(int)limit success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
+- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate fromIndex:(int)index resultsLimit:(int)limit callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
     
     dispatch_async(_contactStoreQueue, ^ {
         
@@ -130,15 +144,29 @@
         NSError* error;
         NSArray* results = [_managedObjectContext executeFetchRequest:request error:&error];
         
-//        dispatch_async(dispatch_get_main_queue(), ^ {
-        
-            if (error) {
+        if (queue) {
+            
+            dispatch_async(queue, ^ {
                 
-                failed(error);
-            } else {
-                success(results);
-            }
-//        });
+                if (error) {
+                    
+                    failed(error);
+                } else {
+                    success(results);
+                }
+            });
+        } else {
+            
+            dispatch_async(dispatch_get_main_queue(), ^ {
+                
+                if (error) {
+                    
+                    failed(error);
+                } else {
+                    success(results);
+                }
+            });
+        }
     });
 }
 

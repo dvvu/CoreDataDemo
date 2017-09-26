@@ -41,3 +41,8 @@ typedef enum {
     ContactLoadingFailError = 3
 } ErorrCode;
 
+typedef NS_ENUM(NSInteger, ScrollOrientation) {
+    
+    ScrollOrientationUp = 1,
+    ScrollOrientationDown = -1
+};

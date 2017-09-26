@@ -10,6 +10,7 @@
 #import "ResultTableViewController.h"
 #import "ThreadSafeForMutableArray.h"
 #import "AddContactViewController.h"
+#import "QuartzCore/QuartzCore.h"
 #import "ContactTableViewCell.h"
 #import "CoreData/CoreData.h"
 #import "CoreDataManager.h"
@@ -24,14 +25,17 @@
 @interface ViewController () <NITableViewModelDelegate, UISearchResultsUpdating, UITableViewDelegate>
 
 @property (nonatomic) ResultTableViewController* searchResultTableViewController;
-@property (nonatomic) NSArray<Contact*>* contacts;
 @property (weak, nonatomic) IBOutlet UIView *searchBarView;
 @property (nonatomic) UISearchController* searchController;
+@property (nonatomic)  __block NSString* groupNameContact;
+@property (nonatomic, strong) UIDynamicAnimator* animator;
+@property (nonatomic) ScrollOrientation scrollOrientation;
 @property (nonatomic) dispatch_queue_t imageCahceQueue;
 @property (nonatomic) NIMutableTableViewModel* model;
 @property (nonatomic) dispatch_queue_t contactQueue;
+@property (nonatomic) NSArray<Contact*>* contacts;
 @property (nonatomic) UITableView* tableView;
-@property (nonatomic)  __block NSString* groupNameContact;
+@property (nonatomic) CGPoint lastPos;
 @property (nonatomic) int pageNumber;
 
 @end
@@ -105,14 +109,9 @@
 
 - (void)loadDataFromCoreData {
     
-    [self setupData];
-}
-
-- (void)setupData {
-    
     dispatch_async(_contactQueue, ^ {
     
-        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:nil fromIndex: _pageNumber * ITEMSFORPAGE resultsLimit:  ITEMSFORPAGE success:^(NSArray* results) {
+        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:nil fromIndex:_pageNumber * ITEMSFORPAGE resultsLimit:ITEMSFORPAGE callbackQueue:_contactQueue success:^(NSArray* results) {
             
             [results enumerateObjectsUsingBlock:^(Contact* _Nonnull contact, NSUInteger idx, BOOL * _Nonnull stop) {
                 
@@ -240,7 +239,7 @@
         
         NSPredicate* predicate = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:@"identifier" searchValue:[object identifier]];
         
-        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate success:^(NSArray* results) {
+        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate callbackQueue:nil success:^(NSArray* results) {
             
              // delete entity
             Contact* deletedContact = results[0];
@@ -251,10 +250,10 @@
                 [[ImageSupporter sharedInstance] removeImageFromFolder:[object identifier]];
                 
                 [[ContactCache sharedInstance] removeImageForKey:[object identifier] completionWith:^{
-                    
-                    [_model removeObjectAtIndexPath:indexPath];
                 
                     dispatch_async(dispatch_get_main_queue(), ^ {
+                        
+                        [_model removeObjectAtIndexPath:indexPath];
                         
                         [_tableView deleteRowsAtIndexPaths:[NSArray arrayWithObjects:indexPath, nil] withRowAnimation:UITableViewRowAnimationNone];
                         
@@ -303,7 +302,7 @@
     NSString* searchString = searchController.searchBar.text;
     NSPredicate* predicate = [NSPredicate predicateWithFormat:@"firstName contains[cd] %@ OR lastName contains[cd] %@ OR phoneNumber contains[cd] %@ OR company contains[cd] %@", searchString, searchString, searchString, searchString];
     
-    [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate success:^(NSArray* results) {
+    [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate callbackQueue:nil success:^(NSArray* results) {
         
         [_searchResultTableViewController repareData:results];
     } failed:^(NSError* error) {
@@ -325,7 +324,6 @@
         [contactTableViewCell setModel:object];
         [cellObject getImageCacheForCell:contactTableViewCell];
         [contactTableViewCell shouldUpdateCellWithObject:object];
-        [self loadMoreContact:indexPath];
     }
     
     return contactTableViewCell;
@@ -349,6 +347,25 @@
         [self loadDataFromCoreData];
     }
     NSLog(@"%d",numberItem);
+}
+
+#pragma mark - scrollViewDidScroll
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    
+    _scrollOrientation = scrollView.contentOffset.y > _lastPos.y ? ScrollOrientationUp : ScrollOrientationDown;
+    _lastPos = scrollView.contentOffset;
+}
+
+#pragma mark - willDisplayCell
+
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    CGPoint touchLocation = [tableView.panGestureRecognizer locationInView:tableView];
+    ContactTableViewCell* contactTableViewCell = (ContactTableViewCell *)cell;
+    [contactTableViewCell animateBounce:touchLocation withOrientation:self.scrollOrientation];
+    
+    [self loadMoreContact:indexPath];
 }
 
 #pragma mark - tableViewDelegate
