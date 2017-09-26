@@ -54,9 +54,10 @@
 - (void)setupLayout {
 
     _pageNumber = 0;
+    _groupNameContact = @"";
     _tableView = [[UITableView alloc] init];
     _tableView.contentInset = UIEdgeInsetsMake(0, -7, 0, 0);
-    _groupNameContact = @"";
+    _tableView.showsVerticalScrollIndicator = YES;
     [self.view addSubview:_tableView];
     
     [_tableView mas_makeConstraints:^(MASConstraintMaker* make) {
@@ -151,8 +152,8 @@
                         lastChar = [cellObject.lastName substringToIndex:1];
                     }
                     
-//                    NSString* nameDefault = [NSString stringWithFormat:@"%@%@",firstChar,lastChar];
-                    cellObject.contactImage = [UIImage imageNamed:@"ic_userDefault"];//[[ImageSupporter sharedInstance] profileImageDefault:nameDefault];
+                    NSString* nameDefault = [NSString stringWithFormat:@"%@%@",firstChar,lastChar];
+                    cellObject.contactImage = [[ImageSupporter sharedInstance] profileImageDefault:nameDefault];//[UIImage imageNamed:@"ic_userDefault"];
                     [_model addObject:cellObject toSection:range.location];
                 }
             }];
@@ -300,43 +301,15 @@
 - (void)updateSearchResultsForSearchController:(UISearchController *)searchController {
     
     NSString* searchString = searchController.searchBar.text;
+    NSPredicate* predicate = [NSPredicate predicateWithFormat:@"firstName contains[cd] %@ OR lastName contains[cd] %@ OR phoneNumber contains[cd] %@ OR company contains[cd] %@", searchString, searchString, searchString, searchString];
     
-    if (_contacts.count > 0 && ![[_contacts objectAtIndex:0] managedObjectContext]) {
-     
-        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:nil success:^(NSArray* results) {
-            
-            _contacts = results;
-            
-            if (searchString.length > 0) {
-                
-                NSPredicate* predicate = [NSPredicate predicateWithFormat:@"firstName contains[cd] %@ OR lastName contains[cd] %@ OR phoneNumber contains[cd] %@ OR company contains[cd] %@", searchString, searchString, searchString, searchString];
-                
-                NSArray<Contact*>* contacts = [_contacts filteredArrayUsingPredicate:predicate];
-                
-                if (contacts) {
-                    
-                    [_searchResultTableViewController repareData:contacts];
-                }
-            }
-            
-        } failed:^(NSError* error) {
-            
-            NSLog(@"%@",error);
-        }];
-    } else {
+    [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate success:^(NSArray* results) {
         
-        if (searchString.length > 0) {
-            
-            NSPredicate* predicate = [NSPredicate predicateWithFormat:@"firstName contains[cd] %@ OR lastName contains[cd] %@ OR phoneNumber contains[cd] %@ OR company contains[cd] %@", searchString, searchString, searchString, searchString];
-            
-            NSArray<Contact*>* contacts = [_contacts filteredArrayUsingPredicate:predicate];
-            
-            if (contacts) {
-                
-                [_searchResultTableViewController repareData:contacts];
-            }
-        }
-    }
+        [_searchResultTableViewController repareData:results];
+    } failed:^(NSError* error) {
+        
+        NSLog(@"%@",error);
+    }];
 }
 
 #pragma mark - Nimbus tableViewDelegate
@@ -352,24 +325,30 @@
         [contactTableViewCell setModel:object];
         [cellObject getImageCacheForCell:contactTableViewCell];
         [contactTableViewCell shouldUpdateCellWithObject:object];
-        
-        int numberItem = 0;
-      
-        for (int i = 0; i < indexPath.section; i++) {
-            
-            numberItem += [tableView numberOfRowsInSection:i];
-        }
-        numberItem += indexPath.row;
-        
-        if (numberItem >= (_pageNumber + 1) * ITEMSFORPAGE - 1) {
-        
-            _pageNumber++;
-            [self loadDataFromCoreData];
-        }
-        NSLog(@"%d",numberItem);
+        [self loadMoreContact:indexPath];
     }
     
     return contactTableViewCell;
+}
+
+#pragma mark - loadMoreContact
+
+- (void)loadMoreContact:(NSIndexPath *)indexPath {
+ 
+    int numberItem = 0;
+    
+    for (int i = 0; i < indexPath.section; i++) {
+        
+        numberItem += [_tableView numberOfRowsInSection:i];
+    }
+    numberItem += indexPath.row;
+    
+    if (numberItem >= (_pageNumber + 1) * ITEMSFORPAGE - 1) {
+        
+        _pageNumber++;
+        [self loadDataFromCoreData];
+    }
+    NSLog(@"%d",numberItem);
 }
 
 #pragma mark - tableViewDelegate
