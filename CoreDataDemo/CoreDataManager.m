@@ -109,7 +109,7 @@
 
 #pragma mark - getEntityWithClass
 
-- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate fromIndex:(int)index resultLimit:(int)limit success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
+- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate fromIndex:(int)index resultsLimit:(int)limit success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
     
     dispatch_async(_contactStoreQueue, ^ {
         
@@ -130,15 +130,15 @@
         NSError* error;
         NSArray* results = [_managedObjectContext executeFetchRequest:request error:&error];
         
-        dispatch_async(dispatch_get_main_queue(), ^ {
-            
+//        dispatch_async(dispatch_get_main_queue(), ^ {
+        
             if (error) {
                 
                 failed(error);
             } else {
                 success(results);
             }
-        });
+//        });
     });
 }
 

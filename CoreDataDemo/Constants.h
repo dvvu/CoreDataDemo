@@ -12,8 +12,8 @@
 
 #define iOS_VERSION_GREATER_THAN_OR_EQUAL_TO(version) [[[UIDevice currentDevice] systemVersion] floatValue] <= version
 
-// 5M
-#define MAX_CACHE_SIZE 29*1024*1024
+// 30M
+#define MAX_CACHE_SIZE 30*1024*1024
 #define MAX_ITEM_SIZE 1024*1024
 
 #define KEYBOARD_HEADER_HEIGHT 35
@@ -25,6 +25,7 @@
 #endif /* Constants_h */
 
 #define CONTACT @"Contact"
+#define ITEMSFORPAGE 50
 
 #pragma mark - contacts Authorizatio Status
 typedef enum {

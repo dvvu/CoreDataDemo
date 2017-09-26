@@ -72,7 +72,7 @@
                 UIImage* circleImage = [self makeRoundImage:image];
                 CGFloat pixelImage = [self imageSize:circleImage];
                 
-                NSLog(@"%lu",(unsigned long)_totalPixel);
+//                NSLog(@"%lu",(unsigned long)_totalPixel);
                 
                 // size of image < valid memory?
                 if (pixelImage <= MAX_ITEM_SIZE) {
@@ -245,7 +245,8 @@
 
 - (void)reduceMemory {
     
-    [_contactCache removeAllObjects];
+    NSLog(@"Cache Error");
+//    [_contactCache removeAllObjects];
 }
 
 @end

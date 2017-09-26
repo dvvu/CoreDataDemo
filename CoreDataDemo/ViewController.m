@@ -31,6 +31,7 @@
 @property (nonatomic) NIMutableTableViewModel* model;
 @property (nonatomic) dispatch_queue_t contactQueue;
 @property (nonatomic) UITableView* tableView;
+@property (nonatomic)  __block NSString* groupNameContact;
 @property (nonatomic) int pageNumber;
 
 @end
@@ -55,6 +56,7 @@
     _pageNumber = 0;
     _tableView = [[UITableView alloc] init];
     _tableView.contentInset = UIEdgeInsetsMake(0, -7, 0, 0);
+    _groupNameContact = @"";
     [self.view addSubview:_tableView];
     
     [_tableView mas_makeConstraints:^(MASConstraintMaker* make) {
@@ -77,6 +79,9 @@
     [[CoreDataManager sharedInstance] initSettingWithCoreDataName:@"CoreDataDemo" sqliteName:@"CoreDataDemoSqlite"];
     [_tableView registerClass:[ContactTableViewCell class] forCellReuseIdentifier:@"ContactTableViewCell"];
     _tableView.delegate = self;
+    
+    _model = [[NIMutableTableViewModel alloc] initWithDelegate:self];
+    [_model setSectionIndexType:NITableViewModelSectionIndexDynamic showsSearch:NO showsSummary:NO];
 }
 
 #pragma mark - viewDidAppear
@@ -87,6 +92,10 @@
     
     if (_needReload) {
         
+        _pageNumber = 0;
+        _groupNameContact = @"";
+        _model = [[NIMutableTableViewModel alloc] initWithDelegate:self];
+        [_model setSectionIndexType:NITableViewModelSectionIndexDynamic showsSearch:NO showsSummary:NO];
         [self loadDataFromCoreData];
     }
 }
@@ -95,102 +104,72 @@
 
 - (void)loadDataFromCoreData {
     
-    [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:nil success:^(NSArray* results) {
-        
-        _contacts = results;
-        [self setupData];
-    } failed:^(NSError* error) {
-        
-        NSLog(@"%@",error);
-    }];
+    [self setupData];
 }
-
-#pragma mark - setupData
 
 - (void)setupData {
     
     dispatch_async(_contactQueue, ^ {
-        
-        __block NSString* groupNameContact = @"";
-        _model = [[NIMutableTableViewModel alloc] initWithDelegate:self];
-        [_model setSectionIndexType:NITableViewModelSectionIndexDynamic showsSearch:NO showsSummary:NO];
-        
-        [_contacts enumerateObjectsUsingBlock:^(Contact* _Nonnull contact, NSUInteger idx, BOOL * _Nonnull stop) {
+    
+        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:nil fromIndex: _pageNumber * ITEMSFORPAGE resultsLimit:  ITEMSFORPAGE success:^(NSArray* results) {
             
-            NSString* nameString = [NSString stringWithFormat:@"%@ %@",[contact firstName], [contact lastName]];
-            NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-            NSString* firstChar = @"";
-            
-            if ([name length] > 0) {
+            [results enumerateObjectsUsingBlock:^(Contact* _Nonnull contact, NSUInteger idx, BOOL * _Nonnull stop) {
                 
-                firstChar = [name substringToIndex:1];
-            } else {
+                NSString* nameString = [NSString stringWithFormat:@"%@ %@",[contact firstName], [contact lastName]];
+                NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+                NSString* firstChar = @"";
                 
-                firstChar = [[contact phoneNumber] substringToIndex:1];
-            }
-            
-            if ([groupNameContact.uppercaseString rangeOfString:firstChar.uppercaseString].location == NSNotFound) {
-                
-                groupNameContact = [groupNameContact stringByAppendingString:firstChar.uppercaseString];
-            }
-        }];
-        
-        int characterGroupNameCount = (int)[groupNameContact length];
-
-        [_contacts enumerateObjectsUsingBlock:^(Contact* _Nonnull contact, NSUInteger idx, BOOL * _Nonnull stop) {
-            
-            if (idx < characterGroupNameCount) {
-                
-                [_model addSectionWithTitle:[groupNameContact substringWithRange:NSMakeRange(idx,1)].uppercaseString];
-            }
-            
-            NSString* nameString = [NSString stringWithFormat:@"%@ %@",[contact firstName] ? [contact firstName ]:@"", [contact lastName] ? [contact lastName ]:@""];
-            NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-            NSString* firstChar = @"";
-            
-            if ([name length] > 0) {
-                
-                firstChar = [name substringToIndex:1];
-            } else if ([contact phoneNumber]) {
-                
-                firstChar = [[contact phoneNumber] substringToIndex:1];
-            }
-            
-            NSRange range = [groupNameContact rangeOfString:firstChar.uppercaseString];
-            
-            if (range.location != NSNotFound) {
-                
-                ContactCellObject* cellObject = [[ContactCellObject alloc] init];
-                
-                cellObject.firstName = [contact firstName] ? [contact firstName] : @"";
-                cellObject.lastName = [contact lastName] ? [contact lastName] : @"";
-                cellObject.identifier = [contact identifier];
-                cellObject.phoneNumber = [contact phoneNumber];
-                cellObject.company = [contact company];
-                NSLog(@"i: %@",cellObject.identifier);
-                
-                NSString* lastChar = @"";
-                
-                if ([cellObject.lastName length] > 0) {
+                if ([name length] > 0) {
                     
-                    lastChar = [cellObject.lastName substringToIndex:1];
+                    firstChar = [name substringToIndex:1];
+                } else {
+                    
+                    firstChar = [[contact phoneNumber] substringToIndex:1];
                 }
                 
-                NSString* nameDefault = [NSString stringWithFormat:@"%@%@",firstChar,lastChar];
-                cellObject.image = [[ImageSupporter sharedInstance] profileImageDefault:nameDefault];
-                [_model addObject:cellObject toSection:range.location];
-            }
-        }];
-        
-        [_model updateSectionIndex];
-        _tableView.dataSource = _model;
-        
-        // Run on main Thread
-        dispatch_async(dispatch_get_main_queue(), ^ {
+                if ([_groupNameContact.uppercaseString rangeOfString:firstChar.uppercaseString].location == NSNotFound) {
+                    
+                    _groupNameContact = [_groupNameContact stringByAppendingString:firstChar.uppercaseString];
+                    [_model addSectionWithTitle:firstChar.uppercaseString];
+                }
+                
+                NSRange range = [_groupNameContact rangeOfString:firstChar.uppercaseString];
+                
+                if (range.location != NSNotFound) {
+                    
+                    ContactCellObject* cellObject = [[ContactCellObject alloc] init];
+                    
+                    cellObject.firstName = [contact firstName] ? [contact firstName] : @"";
+                    cellObject.lastName = [contact lastName] ? [contact lastName] : @"";
+                    cellObject.identifier = [contact identifier];
+                    cellObject.phoneNumber = [contact phoneNumber];
+                    cellObject.company = [contact company];
+                    NSString* lastChar = @"";
+                    
+                    if ([cellObject.lastName length] > 0) {
+                        
+                        lastChar = [cellObject.lastName substringToIndex:1];
+                    }
+                    
+//                    NSString* nameDefault = [NSString stringWithFormat:@"%@%@",firstChar,lastChar];
+                    cellObject.contactImage = [UIImage imageNamed:@"ic_userDefault"];//[[ImageSupporter sharedInstance] profileImageDefault:nameDefault];
+                    [_model addObject:cellObject toSection:range.location];
+                }
+            }];
             
-            [_tableView reloadData];
-            _needReload = NO;
-        });
+            [_model updateSectionIndex];
+            _tableView.dataSource = _model;
+            
+            // Run on main Thread
+            dispatch_async(dispatch_get_main_queue(), ^ {
+                
+                [_tableView reloadData];
+                _needReload = NO;
+            });
+        } failed:^(NSError* error) {
+            
+            NSLog(@"%@",error);
+        }];
     });
 }
 
@@ -272,7 +251,23 @@
                 
                 [[ContactCache sharedInstance] removeImageForKey:[object identifier] completionWith:^{
                     
-                    [self loadDataFromCoreData];
+                    [_model removeObjectAtIndexPath:indexPath];
+                
+                    dispatch_async(dispatch_get_main_queue(), ^ {
+                        
+                        [_tableView deleteRowsAtIndexPaths:[NSArray arrayWithObjects:indexPath, nil] withRowAnimation:UITableViewRowAnimationNone];
+                        
+                        if ([_tableView numberOfRowsInSection:indexPath.section] == 0) {
+                            
+                            [_model removeSectionAtIndex:indexPath.section];
+                            
+                            [_tableView deleteSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationNone];
+                        }
+                        
+                        [_tableView reloadData];
+                    });
+
+                    [_model updateSectionIndex];
                 }];
             }
          } failed:^(NSError* error) {
@@ -366,9 +361,12 @@
         }
         numberItem += indexPath.row;
         
-        if (numberItem > _pageNumber * 10) {
-            
+        if (numberItem >= (_pageNumber + 1) * ITEMSFORPAGE - 1) {
+        
+            _pageNumber++;
+            [self loadDataFromCoreData];
         }
+        NSLog(@"%d",numberItem);
     }
     
     return contactTableViewCell;

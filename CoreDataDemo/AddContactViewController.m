@@ -253,27 +253,23 @@
              NSLog(@"%@",error);
          }];
     } else {
-
-        for (int i = 0; i < 100; i++) {
+        
+        Contact* contact = [[CoreDataManager sharedInstance] createInsertEntityWithClassName:CONTACT];
+        contact.firstName = _firstNameTextField.text;
+        contact.lastName = _lastNameTextField.text;
+        contact.phoneNumber = _phoneNumberTextField.text;
+        contact.company = _companyNameTextField.text;
+        contact.identifier = [[NSUUID UUID] UUIDString];
+        
+        if (_isSelectedImage) {
             
-            Contact* contact = [[CoreDataManager sharedInstance] createInsertEntityWithClassName:CONTACT];
-            contact.firstName = _firstNameTextField.text;
-            contact.lastName = _lastNameTextField.text;
-            contact.phoneNumber = _phoneNumberTextField.text;
-            contact.company = _companyNameTextField.text;
-            contact.identifier = [[NSUUID UUID] UUIDString];
-            
-            if (_isSelectedImage) {
-                
-                [[ImageSupporter sharedInstance] storeImageToFolder:_profileImageView.image withImageName:contact.identifier];
-                [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:_profileImageView.image]] forKey:contact.identifier];
-            }
+            [[ImageSupporter sharedInstance] storeImageToFolder:_profileImageView.image withImageName:contact.identifier];
+            [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:_profileImageView.image]] forKey:contact.identifier];
         }
 
         [[CoreDataManager sharedInstance] save];
       }
 
-    // add and reload need to update 1 cell
     ViewController* viewController = (ViewController *)[self.navigationController.viewControllers objectAtIndex:0];
     viewController.needReload = YES;
     [self.navigationController popToRootViewControllerAnimated:YES];

@@ -327,7 +327,7 @@
     CGRect rect = CGRectMake(0,0,imageHeight,imageHeight);
     
     // setup text
-    UIFont* font = [UIFont systemFontOfSize:30];
+    UIFont* font = [UIFont systemFontOfSize:35];
     CGSize textSize = [textNameDefault.uppercaseString sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:35]}];
     NSMutableAttributedString* nameAttString = [[NSMutableAttributedString alloc] initWithString:textNameDefault.uppercaseString];
     NSRange range = NSMakeRange(0, [nameAttString length]);

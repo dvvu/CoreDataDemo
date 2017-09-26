@@ -26,7 +26,7 @@ typedef void (^CoreDataSaveSuccess)();
 - (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed;
 
 #pragma mark - getEntityWithClass
-- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate fromIndex:(int)index resultLimit:(int)limit success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed;
+- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate fromIndex:(int)index resultsLimit:(int)limit success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed;
 
 #pragma mark - insert
 - (id)createInsertEntityWithClassName:(NSString *)className;
