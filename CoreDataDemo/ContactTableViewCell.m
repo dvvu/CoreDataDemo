@@ -60,6 +60,8 @@
     return YES;
 }
 
+#pragma mark - animateBounce
+
 - (void)animateBounce:(CGPoint)touchLocation withOrientation:(ScrollOrientation)orienatation {
     
     if (![[_dynamicAnimator behaviors] containsObject:_springBehavior]) {
@@ -71,12 +73,11 @@
     
     _springBehavior.anchorPoint = anchorPoint;
     
-    CGFloat distanceFromTouch = fabs(touchLocation.y - anchorPoint.y);
+    CGFloat distanceFromTouch = touchLocation.y - anchorPoint.y;
     CGFloat scrollResistance = distanceFromTouch / 100;
-    CGPoint center = self.center;
     
-    center.y += 10 * orienatation * scrollResistance;
-    self.center = center;
+    anchorPoint.y += 10 * orienatation * scrollResistance;
+    self.center = anchorPoint;
     
     [_dynamicAnimator updateItemUsingCurrentState:self];
 }
@@ -91,6 +92,17 @@
 #pragma mark - setupLayoutForCell
 
 - (void)setupLayoutForCell {
+    
+    if (!_springBehavior) {
+        
+        _springBehavior = [[UIAttachmentBehavior alloc] initWithItem:self attachedToAnchor:self.center];
+        _springBehavior.length = 0;
+        _springBehavior.damping = 0.8;
+        _springBehavior.frequency = 1;
+        
+        _dynamicAnimator = [[UIDynamicAnimator alloc] init];
+        [_dynamicAnimator addBehavior:_springBehavior];
+    }
     
     CGFloat scale = FONTSIZE_SCALE;
     
@@ -147,17 +159,6 @@
         make.centerY.equalTo(_containView);
         make.right.equalTo(_containView.mas_right).offset(-8);
     }];
-    
-    if(!self.springBehavior) {
-        
-        _springBehavior = [[UIAttachmentBehavior alloc] initWithItem:self attachedToAnchor:self.center];
-        _springBehavior.length = 0;
-        _springBehavior.damping = 0.8;
-        _springBehavior.frequency = 1;
-        
-        _dynamicAnimator = [[UIDynamicAnimator alloc] init];
-        [_dynamicAnimator addBehavior:self.springBehavior];
-    }
 }
 
 #pragma mark - heightForObject NI delegate

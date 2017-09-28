@@ -25,7 +25,7 @@
 #endif /* Constants_h */
 
 #define CONTACT @"Contact"
-#define ITEMSFORPAGE 50
+#define PAGEITEMS 50
 
 #pragma mark - contacts Authorizatio Status
 typedef enum {

@@ -292,7 +292,7 @@
             [self presentViewController:picker animated:YES completion:nil];
         } else {
             
-            [[[UIAlertView alloc] initWithTitle:errorString message: @"Please! Enable to use" delegate:self cancelButtonTitle:@"CLOSE" otherButtonTitles:@"GO TO SETTING", nil] show];
+            [[[UIAlertView alloc] initWithTitle:errorString message:@"Please! Enable to use" delegate:self cancelButtonTitle:@"CLOSE" otherButtonTitles:@"GO TO SETTING", nil] show];
         }
     }];
 }

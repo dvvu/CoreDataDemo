@@ -12,6 +12,7 @@
 
 @interface ContactTableViewCell : UITableViewCell <NICell>
 
+#pragma mark - animateBounce
 - (void)animateBounce:(CGPoint)touchLocation withOrientation:(ScrollOrientation)orienatation;
 
 @property (nonatomic) id<ContactModelProtocol>model;

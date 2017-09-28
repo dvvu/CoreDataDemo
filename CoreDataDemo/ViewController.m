@@ -86,7 +86,8 @@
     _tableView.delegate = self;
     
     _model = [[NIMutableTableViewModel alloc] initWithDelegate:self];
-    [_model setSectionIndexType:NITableViewModelSectionIndexDynamic showsSearch:NO showsSummary:NO];
+//    [_model setSectionIndexType:NITableViewModelSectionIndexDynamic showsSearch:NO showsSummary:NO];
+    [_tableView setShowsVerticalScrollIndicator:YES];
 }
 
 #pragma mark - viewDidAppear
@@ -100,7 +101,8 @@
         _pageNumber = 0;
         _groupNameContact = @"";
         _model = [[NIMutableTableViewModel alloc] initWithDelegate:self];
-        [_model setSectionIndexType:NITableViewModelSectionIndexDynamic showsSearch:NO showsSummary:NO];
+//        [_model setSectionIndexType:NITableViewModelSectionIndexDynamic showsSearch:NO showsSummary:NO];
+        [_tableView setShowsVerticalScrollIndicator:YES];
         [self loadDataFromCoreData];
     }
 }
@@ -111,7 +113,7 @@
     
     dispatch_async(_contactQueue, ^ {
     
-        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:nil fromIndex:_pageNumber * ITEMSFORPAGE resultsLimit:ITEMSFORPAGE callbackQueue:_contactQueue success:^(NSArray* results) {
+        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:nil fromIndex:_pageNumber * PAGEITEMS resultsLimit:PAGEITEMS callbackQueue:_contactQueue success:^(NSArray* results) {
             
             [results enumerateObjectsUsingBlock:^(Contact* _Nonnull contact, NSUInteger idx, BOOL * _Nonnull stop) {
                 
@@ -222,6 +224,7 @@
 - (NSArray *)tableView:(UITableView *)tableView editActionsForRowAtIndexPath:(NSIndexPath *)indexPath {
     
     ContactCellObject* object = [_model objectAtIndexPath:indexPath];
+    [_tableView layoutIfNeeded];
     
     UITableViewRowAction* eidtButton = [UITableViewRowAction rowActionWithStyle:UITableViewRowActionStyleDefault title:@"Edit" handler:^(UITableViewRowAction* action, NSIndexPath* indexPath) {
         
@@ -341,7 +344,7 @@
     }
     numberItem += indexPath.row;
     
-    if (numberItem >= (_pageNumber + 1) * ITEMSFORPAGE - 1) {
+    if (numberItem >= (_pageNumber + 1) * PAGEITEMS - 1) {
         
         _pageNumber++;
         [self loadDataFromCoreData];
@@ -364,7 +367,6 @@
     CGPoint touchLocation = [tableView.panGestureRecognizer locationInView:tableView];
     ContactTableViewCell* contactTableViewCell = (ContactTableViewCell *)cell;
     [contactTableViewCell animateBounce:touchLocation withOrientation:self.scrollOrientation];
-    
     [self loadMoreContact:indexPath];
 }
 

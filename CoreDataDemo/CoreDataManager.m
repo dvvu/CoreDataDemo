@@ -189,7 +189,7 @@
     return predicate;
 }
 
-#pragma mark -  managedObjectContextWithCoreDataName
+#pragma mark - managedObjectContextWithCoreDataName
 
 - (NSManagedObjectContext *)managedObjectContextWithCoreDataName:(NSString *)coreDataName sqliteName:(NSString *)sqliteName {
     
@@ -204,7 +204,7 @@
     return _managedObjectContext;
 }
 
-#pragma mark -  persistentStoreCoordinatorWithCoreDataName
+#pragma mark - persistentStoreCoordinatorWithCoreDataName
 
 - (NSPersistentStoreCoordinator *)persistentStoreCoordinatorWithCoreDataName:(NSString *)coreDataName sqliteName:(NSString *)sqliteName {
     
@@ -221,7 +221,7 @@
     return _persistentStoreCoordinator;
 }
 
-#pragma mark -  managedObjectModelWithCoreDataName
+#pragma mark - managedObjectModelWithCoreDataName
 
 - (NSManagedObjectModel *)managedObjectModelWithCoreDataName:(NSString *)coreDataName {
     
