@@ -50,7 +50,7 @@
     
     dispatch_async(_resultSearchContactQueue, ^ {
         
-        if(_listContactBook) {
+        if (_listContactBook) {
             
             NSMutableArray* objects = [NSMutableArray array];
             
@@ -88,10 +88,7 @@
         [[[UIAlertView alloc] initWithTitle:@"Do you want to call?" message: cellObject.phoneNumber delegate:self cancelButtonTitle:@"Call" otherButtonTitles:@"Close", nil] show];
     }
     
-    [UIView animateWithDuration:0.2 animations: ^ {
-        
-        [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    }];
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
 #pragma mark - heigh for cell

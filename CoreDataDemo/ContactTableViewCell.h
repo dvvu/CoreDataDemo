@@ -11,6 +11,7 @@
 #import "Constants.h"
 
 @interface ContactTableViewCell : UITableViewCell <NICell>
+
 @property (nonatomic) id<ContactModelProtocol>model;
 @property (nonatomic) UIImageView* profileImageView;
 @property (nonatomic) UILabel* phoneNumber;

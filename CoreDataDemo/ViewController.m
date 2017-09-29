@@ -20,6 +20,7 @@
 #import "NimbusCore.h"
 #import "Constants.h"
 #import "Masonry.h"
+#import "QuartzCore/QuartzCore.h"
 
 @interface ViewController () <NITableViewModelDelegate, UISearchResultsUpdating, UITableViewDelegate, UIAlertViewDelegate>
 
@@ -336,7 +337,7 @@
 #pragma mark - willDisplayCell
 
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
-
+    
     [self loadMoreContact:indexPath];
 }
 

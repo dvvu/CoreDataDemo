@@ -70,7 +70,7 @@
 - (void)setupLayoutForCell {
     
     CGFloat scale = FONTSIZE_SCALE;
-    
+   
     _containView = [[UIView alloc] init];
     [_containView setBackgroundColor:[UIColor whiteColor]];
     [self addSubview:_containView];

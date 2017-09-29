@@ -12,7 +12,6 @@
 @interface ImageSupporter ()
 
 @property (nonatomic) dispatch_queue_t photoPermissionQueue;
-@property (nonatomic) dispatch_queue_t defaultImageQueue;
 @property (nonatomic) dispatch_queue_t imageFromFolderQueue;
 @end
 
@@ -40,7 +39,6 @@
     if (self) {
         
         _photoPermissionQueue = dispatch_queue_create("PHOTO_PERMISSION_QUEUE", DISPATCH_QUEUE_SERIAL);
-        _defaultImageQueue = dispatch_queue_create("DEFAULT_IMAGE_QUEUE", DISPATCH_QUEUE_SERIAL);
         _imageFromFolderQueue = dispatch_queue_create("IMAGE_FROM_FOlDER_QUEUE", DISPATCH_QUEUE_CONCURRENT);
     }
     
