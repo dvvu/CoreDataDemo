@@ -206,7 +206,6 @@
     [_doneButton setTitle:@"Done" forState:UIControlStateNormal];
     [_doneButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
     [_doneButton setTitleColor:[UIColor redColor] forState:UIControlStateHighlighted];
-    [_doneButton setEnabled:NO];
     _doneBarButton = [[UIBarButtonItem alloc] initWithCustomView:_doneButton];
     [_doneBarButton setEnabled:NO];
     self.navigationItem.rightBarButtonItem = _doneBarButton;
@@ -432,7 +431,7 @@
 
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
     
-    // gotosetting
+    // goto setting
     if (buttonIndex == 1) {
         
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]];
@@ -445,9 +444,9 @@
     
     if ([UIAlertController class]) {
         
-        UIAlertController * alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertController* alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
         
-        UIAlertAction* settingButton = [UIAlertAction actionWithTitle:@"GO TO SETTING" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+        UIAlertAction* settingButton = [UIAlertAction actionWithTitle:@"GO TO SETTING" style:UIAlertActionStyleDefault handler:^(UIAlertAction* action){
             
             [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]];
         }];

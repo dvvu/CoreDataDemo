@@ -371,9 +371,9 @@
     
     if ([UIAlertController class]) {
         
-        UIAlertController * alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertController* alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
         
-        UIAlertAction* settingButton = [UIAlertAction actionWithTitle:@"Call" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+        UIAlertAction* settingButton = [UIAlertAction actionWithTitle:@"CALL" style:UIAlertActionStyleDefault handler:^(UIAlertAction* action){
             
             [[UIApplication sharedApplication] openURL:[NSURL URLWithString:[@"tel:" stringByAppendingString:message]]];
         }];
@@ -387,7 +387,7 @@
         [vc presentViewController:alert animated:YES completion:nil];
     } else {
         
-        [[[UIAlertView alloc] initWithTitle:title message:message delegate:self cancelButtonTitle:@"Call" otherButtonTitles:@"Close", nil] show];
+        [[[UIAlertView alloc] initWithTitle:title message:message delegate:self cancelButtonTitle:@"CALL" otherButtonTitles:@"CLOSE", nil] show];
     }
 }
 

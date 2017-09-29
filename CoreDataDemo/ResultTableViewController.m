@@ -62,7 +62,6 @@
                 cellObject.identifier = [contactEntity identifier];
                 cellObject.phoneNumber = [contactEntity phoneNumber];
                 cellObject.company = [contactEntity company];
-                cellObject.identifier = [contactEntity identifier];
                 [objects addObject:cellObject];
             }
             
