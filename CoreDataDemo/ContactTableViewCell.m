@@ -13,8 +13,6 @@
 
 @interface ContactTableViewCell ()
 
-@property (nonatomic) UIAttachmentBehavior* springBehavior;
-@property (nonatomic) UIDynamicAnimator* dynamicAnimator;
 @property (nonatomic) UIView* containView;
 
 @end
@@ -60,28 +58,6 @@
     return YES;
 }
 
-#pragma mark - animateBounce
-
-- (void)animateBounce:(CGPoint)touchLocation withOrientation:(ScrollOrientation)orienatation {
-    
-    if (![[_dynamicAnimator behaviors] containsObject:_springBehavior]) {
-        
-        [_dynamicAnimator addBehavior:_springBehavior];
-    }
-    
-    CGPoint anchorPoint = self.center;
-    
-    _springBehavior.anchorPoint = anchorPoint;
-    
-    CGFloat distanceFromTouch = touchLocation.y - anchorPoint.y;
-    CGFloat scrollResistance = distanceFromTouch / 100;
-    
-    anchorPoint.y += 10 * orienatation * scrollResistance;
-    self.center = anchorPoint;
-    
-    [_dynamicAnimator updateItemUsingCurrentState:self];
-}
-
 #pragma mark - setModel
 
 - (void)setModel:(id<ContactModelProtocol>)model {
@@ -92,17 +68,6 @@
 #pragma mark - setupLayoutForCell
 
 - (void)setupLayoutForCell {
-    
-    if (!_springBehavior) {
-        
-        _springBehavior = [[UIAttachmentBehavior alloc] initWithItem:self attachedToAnchor:self.center];
-        _springBehavior.length = 0;
-        _springBehavior.damping = 0.8;
-        _springBehavior.frequency = 1;
-        
-        _dynamicAnimator = [[UIDynamicAnimator alloc] init];
-        [_dynamicAnimator addBehavior:_springBehavior];
-    }
     
     CGFloat scale = FONTSIZE_SCALE;
     

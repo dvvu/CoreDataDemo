@@ -46,9 +46,9 @@
     return self;
 }
 
-#pragma mark - Initial
+#pragma mark - initWithCoreDataName
 
-- (void)initSettingWithCoreDataName:(NSString *)coreDataName sqliteName:(NSString *)sqliteName {
+- (void)initWithCoreDataName:(NSString *)coreDataName andSqliteName:(NSString *)sqliteName {
     
     dispatch_barrier_async(_contactStoreQueue, ^ {
     
@@ -58,9 +58,9 @@
 
 #pragma mark - createInsertEntityWithClassName
 
-- (id)createInsertEntityWithClassName:(NSString *)className {
+- (id)createEntityForClass:(NSString *)entityClass {
   
-    return [NSEntityDescription insertNewObjectForEntityForName:className inManagedObjectContext:_managedObjectContext];
+    return [NSEntityDescription insertNewObjectForEntityForName:entityClass inManagedObjectContext:_managedObjectContext];
 }
 
 #pragma mark - save
@@ -74,9 +74,9 @@
     });
 }
 
-#pragma mark - getEntityWithClass
+#pragma mark - getEntityFromClass if queue = nil -> callback main 
 
-- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
+- (void)getEntitiesFromClass:(NSString *)entityClass withCondition:(NSPredicate *)condition callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
    
     dispatch_async(_contactStoreQueue, ^ {
        
@@ -87,9 +87,9 @@
         NSSortDescriptor* sortLastName = [[NSSortDescriptor alloc] initWithKey:@"lastName" ascending:YES];
         [request setSortDescriptors:@[sortFirstName,sortLastName]];
         
-        if (predicate) {
+        if (condition) {
             
-            [request setPredicate:predicate];
+            [request setPredicate:condition];
         }
 
         NSError* error;
@@ -123,7 +123,7 @@
 
 #pragma mark - getEntityWithClass
 
-- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate fromIndex:(int)index resultsLimit:(int)limit callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
+- (void)getEntitiesFromClass:(NSString *)entityClass withCondition:(NSPredicate *)condition maximumEntities:(int)maximumEntities fromIndex:(int)index callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed {
     
     dispatch_async(_contactStoreQueue, ^ {
         
@@ -133,12 +133,12 @@
         NSSortDescriptor* sortFirstName = [[NSSortDescriptor alloc] initWithKey:@"firstName" ascending:YES];
         NSSortDescriptor* sortLastName = [[NSSortDescriptor alloc] initWithKey:@"lastName" ascending:YES];
         [request setSortDescriptors:@[sortFirstName,sortLastName]];
-        request.fetchLimit = limit;
+        request.fetchLimit = maximumEntities;
         request.fetchOffset = index;
         
-        if (predicate) {
+        if (condition) {
             
-            [request setPredicate:predicate];
+            [request setPredicate:condition];
         }
     
         NSError* error;
@@ -172,7 +172,7 @@
 
 #pragma mark - deleteWithEntity
 
-- (void)deleteWithEntity:(id)entity {
+- (void)deleteEntity:(id)entity {
     
     dispatch_barrier_async(_contactStoreQueue, ^ {
         
@@ -181,9 +181,9 @@
     });
 }
 
-#pragma mark - setPredicateEqualWithSearchKey
+#pragma mark - setConditonWithSearchKey
 
-- (NSPredicate *)setPredicateEqualWithSearchKey:(NSString *)searchkey searchValue:(id)searchValue {
+- (NSPredicate *)setConditonWithSearchKey:(NSString *)searchkey searchValue:(id)searchValue {
     
     NSPredicate* predicate = [NSPredicate predicateWithFormat:@"%K=%@",searchkey,searchValue];
     return predicate;

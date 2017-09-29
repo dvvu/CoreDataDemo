@@ -10,7 +10,6 @@
 #import "ResultTableViewController.h"
 #import "ThreadSafeForMutableArray.h"
 #import "AddContactViewController.h"
-#import "QuartzCore/QuartzCore.h"
 #import "ContactTableViewCell.h"
 #import "CoreData/CoreData.h"
 #import "CoreDataManager.h"
@@ -22,20 +21,17 @@
 #import "Constants.h"
 #import "Masonry.h"
 
-@interface ViewController () <NITableViewModelDelegate, UISearchResultsUpdating, UITableViewDelegate>
+@interface ViewController () <NITableViewModelDelegate, UISearchResultsUpdating, UITableViewDelegate, UIAlertViewDelegate>
 
 @property (nonatomic) ResultTableViewController* searchResultTableViewController;
 @property (weak, nonatomic) IBOutlet UIView *searchBarView;
 @property (nonatomic) UISearchController* searchController;
-@property (nonatomic)  __block NSString* groupNameContact;
-@property (nonatomic, strong) UIDynamicAnimator* animator;
-@property (nonatomic) ScrollOrientation scrollOrientation;
+@property (nonatomic) __block NSString* groupNameContact;
 @property (nonatomic) dispatch_queue_t imageCahceQueue;
 @property (nonatomic) NIMutableTableViewModel* model;
 @property (nonatomic) dispatch_queue_t contactQueue;
 @property (nonatomic) NSArray<Contact*>* contacts;
 @property (nonatomic) UITableView* tableView;
-@property (nonatomic) CGPoint lastPos;
 @property (nonatomic) int pageNumber;
 
 @end
@@ -81,7 +77,7 @@
     _contactQueue = dispatch_queue_create("CONTACT_QUEUE", DISPATCH_QUEUE_SERIAL);
     _imageCahceQueue = dispatch_queue_create("IMAGE_CAHCES_QUEUE", DISPATCH_QUEUE_SERIAL);
     
-    [[CoreDataManager sharedInstance] initSettingWithCoreDataName:@"CoreDataDemo" sqliteName:@"CoreDataDemoSqlite"];
+    [[CoreDataManager sharedInstance] initWithCoreDataName:@"CoreDataDemo" andSqliteName:@"CoreDataDemoSQLite"];
     [_tableView registerClass:[ContactTableViewCell class] forCellReuseIdentifier:@"ContactTableViewCell"];
     _tableView.delegate = self;
     
@@ -111,68 +107,65 @@
 
 - (void)loadDataFromCoreData {
     
-    dispatch_async(_contactQueue, ^ {
-    
-        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:nil fromIndex:_pageNumber * PAGEITEMS resultsLimit:PAGEITEMS callbackQueue:_contactQueue success:^(NSArray* results) {
+    [[CoreDataManager sharedInstance] getEntitiesFromClass:CONTACT withCondition:nil maximumEntities:PAGEITEMS fromIndex:_pageNumber * PAGEITEMS callbackQueue:_contactQueue success:^(NSArray* results) {
+        
+        [results enumerateObjectsUsingBlock:^(Contact* _Nonnull contact, NSUInteger idx, BOOL * _Nonnull stop) {
             
-            [results enumerateObjectsUsingBlock:^(Contact* _Nonnull contact, NSUInteger idx, BOOL * _Nonnull stop) {
+            NSString* nameString = [NSString stringWithFormat:@"%@ %@",[contact firstName], [contact lastName]];
+            NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            NSString* firstChar = @"";
+            
+            if ([name length] > 0) {
                 
-                NSString* nameString = [NSString stringWithFormat:@"%@ %@",[contact firstName], [contact lastName]];
-                NSString* name = [nameString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-                NSString* firstChar = @"";
+                firstChar = [name substringToIndex:1];
+            } else {
                 
-                if ([name length] > 0) {
+                firstChar = [[contact phoneNumber] substringToIndex:1];
+            }
+            
+            if ([_groupNameContact.uppercaseString rangeOfString:firstChar.uppercaseString].location == NSNotFound) {
+                
+                _groupNameContact = [_groupNameContact stringByAppendingString:firstChar.uppercaseString];
+                [_model addSectionWithTitle:firstChar.uppercaseString];
+            }
+            
+            NSRange range = [_groupNameContact rangeOfString:firstChar.uppercaseString];
+            
+            if (range.location != NSNotFound) {
+                
+                ContactCellObject* cellObject = [[ContactCellObject alloc] init];
+                
+                cellObject.firstName = [contact firstName] ? [contact firstName] : @"";
+                cellObject.lastName = [contact lastName] ? [contact lastName] : @"";
+                cellObject.identifier = [contact identifier];
+                cellObject.phoneNumber = [contact phoneNumber];
+                cellObject.company = [contact company];
+                NSString* lastChar = @"";
+                
+                if ([cellObject.lastName length] > 0) {
                     
-                    firstChar = [name substringToIndex:1];
-                } else {
-                    
-                    firstChar = [[contact phoneNumber] substringToIndex:1];
+                    lastChar = [cellObject.lastName substringToIndex:1];
                 }
                 
-                if ([_groupNameContact.uppercaseString rangeOfString:firstChar.uppercaseString].location == NSNotFound) {
-                    
-                    _groupNameContact = [_groupNameContact stringByAppendingString:firstChar.uppercaseString];
-                    [_model addSectionWithTitle:firstChar.uppercaseString];
-                }
-                
-                NSRange range = [_groupNameContact rangeOfString:firstChar.uppercaseString];
-                
-                if (range.location != NSNotFound) {
-                    
-                    ContactCellObject* cellObject = [[ContactCellObject alloc] init];
-                    
-                    cellObject.firstName = [contact firstName] ? [contact firstName] : @"";
-                    cellObject.lastName = [contact lastName] ? [contact lastName] : @"";
-                    cellObject.identifier = [contact identifier];
-                    cellObject.phoneNumber = [contact phoneNumber];
-                    cellObject.company = [contact company];
-                    NSString* lastChar = @"";
-                    
-                    if ([cellObject.lastName length] > 0) {
-                        
-                        lastChar = [cellObject.lastName substringToIndex:1];
-                    }
-                    
-                    NSString* nameDefault = [NSString stringWithFormat:@"%@%@",firstChar,lastChar];
-                    cellObject.contactImage = [[ImageSupporter sharedInstance] profileImageDefault:nameDefault];//[UIImage imageNamed:@"ic_userDefault"];
-                    [_model addObject:cellObject toSection:range.location];
-                }
-            }];
-            
-            [_model updateSectionIndex];
-            _tableView.dataSource = _model;
-            
-            // Run on main Thread
-            dispatch_async(dispatch_get_main_queue(), ^ {
-                
-                [_tableView reloadData];
-                _needReload = NO;
-            });
-        } failed:^(NSError* error) {
-            
-            NSLog(@"%@",error);
+                NSString* nameDefault = [NSString stringWithFormat:@"%@%@",firstChar,lastChar];
+                cellObject.contactImage = [[ImageSupporter sharedInstance] profileImageDefault:nameDefault];//[UIImage imageNamed:@"ic_userDefault"];
+                [_model addObject:cellObject toSection:range.location];
+            }
         }];
-    });
+        
+        [_model updateSectionIndex];
+        _tableView.dataSource = _model;
+        
+        // Run on main Thread
+        dispatch_async(dispatch_get_main_queue(), ^ {
+            
+            [_tableView reloadData];
+            _needReload = NO;
+        });
+    } failed:^(NSError* error) {
+        
+        NSLog(@"%@",error);
+    }];
 }
 
 #pragma mark - Create searchBar
@@ -224,8 +217,6 @@
 - (NSArray *)tableView:(UITableView *)tableView editActionsForRowAtIndexPath:(NSIndexPath *)indexPath {
     
     ContactCellObject* object = [_model objectAtIndexPath:indexPath];
-    [_tableView layoutIfNeeded];
-    
     UITableViewRowAction* eidtButton = [UITableViewRowAction rowActionWithStyle:UITableViewRowActionStyleDefault title:@"Edit" handler:^(UITableViewRowAction* action, NSIndexPath* indexPath) {
         
         [tableView setEditing:NO];
@@ -239,39 +230,29 @@
     UITableViewRowAction* deleteAction = [UITableViewRowAction rowActionWithStyle:UITableViewRowActionStyleDestructive title:@"Delete"  handler:^(UITableViewRowAction* action, NSIndexPath* indexPath) {
         
         [tableView setEditing:NO];
+        NSPredicate* predicate = [[CoreDataManager sharedInstance] setConditonWithSearchKey:@"identifier" searchValue:[object identifier]];
         
-        NSPredicate* predicate = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:@"identifier" searchValue:[object identifier]];
-        
-        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate callbackQueue:nil success:^(NSArray* results) {
+        [[CoreDataManager sharedInstance] getEntitiesFromClass:CONTACT withCondition:predicate callbackQueue:nil success:^(NSArray* results) {
             
              // delete entity
             Contact* deletedContact = results[0];
           
             if (deletedContact) {
              
-                [[CoreDataManager sharedInstance] deleteWithEntity:deletedContact];
+                [[CoreDataManager sharedInstance] deleteEntity:deletedContact];
                 [[ImageSupporter sharedInstance] removeImageFromFolder:[object identifier]];
+                [[ContactCache sharedInstance] removeImageForKey:[object identifier] completionWith:nil];
+                [_model removeObjectAtIndexPath:indexPath];
+                [_tableView deleteRowsAtIndexPaths:[NSArray arrayWithObjects:indexPath, nil] withRowAnimation:UITableViewRowAnimationNone];
                 
-                [[ContactCache sharedInstance] removeImageForKey:[object identifier] completionWith:^{
+                if ([_tableView numberOfRowsInSection:indexPath.section] == 0) {
+                    
+                    [_model removeSectionAtIndex:indexPath.section];
+                    [_tableView deleteSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationNone];
+                }
                 
-                    dispatch_async(dispatch_get_main_queue(), ^ {
-                        
-                        [_model removeObjectAtIndexPath:indexPath];
-                        
-                        [_tableView deleteRowsAtIndexPaths:[NSArray arrayWithObjects:indexPath, nil] withRowAnimation:UITableViewRowAnimationNone];
-                        
-                        if ([_tableView numberOfRowsInSection:indexPath.section] == 0) {
-                            
-                            [_model removeSectionAtIndex:indexPath.section];
-                            
-                            [_tableView deleteSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationNone];
-                        }
-                        
-                        [_tableView reloadData];
-                    });
-
-                    [_model updateSectionIndex];
-                }];
+                [_tableView reloadData];
+                [_model updateSectionIndex];
             }
          } failed:^(NSError* error) {
              
@@ -305,7 +286,7 @@
     NSString* searchString = searchController.searchBar.text;
     NSPredicate* predicate = [NSPredicate predicateWithFormat:@"firstName contains[cd] %@ OR lastName contains[cd] %@ OR phoneNumber contains[cd] %@ OR company contains[cd] %@", searchString, searchString, searchString, searchString];
     
-    [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate callbackQueue:nil success:^(NSArray* results) {
+    [[CoreDataManager sharedInstance] getEntitiesFromClass:CONTACT withCondition:predicate callbackQueue:nil success:^(NSArray* results) {
         
         [_searchResultTableViewController repareData:results];
     } failed:^(NSError* error) {
@@ -352,21 +333,10 @@
     NSLog(@"%d",numberItem);
 }
 
-#pragma mark - scrollViewDidScroll
-
-- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    
-    _scrollOrientation = scrollView.contentOffset.y > _lastPos.y ? ScrollOrientationUp : ScrollOrientationDown;
-    _lastPos = scrollView.contentOffset;
-}
-
 #pragma mark - willDisplayCell
 
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
-    
-    CGPoint touchLocation = [tableView.panGestureRecognizer locationInView:tableView];
-    ContactTableViewCell* contactTableViewCell = (ContactTableViewCell *)cell;
-    [contactTableViewCell animateBounce:touchLocation withOrientation:self.scrollOrientation];
+
     [self loadMoreContact:indexPath];
 }
 
@@ -388,13 +358,47 @@
     
     if (cellObject.phoneNumber) {
         
-        [[[UIAlertView alloc] initWithTitle:@"Do you want to call?" message: cellObject.phoneNumber delegate:self cancelButtonTitle:@"Call" otherButtonTitles:@"Close", nil] show];
+        [self showMessage:cellObject.phoneNumber withTitle:@"Do you want to call?"];
     }
     
-    [UIView animateWithDuration:0.2 animations: ^ {
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+}
+
+#pragma mark - showMessage
+
+- (void)showMessage:(NSString*)message withTitle:(NSString *)title {
+    
+    if ([UIAlertController class]) {
         
-        [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    }];
+        UIAlertController * alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+        
+        UIAlertAction* settingButton = [UIAlertAction actionWithTitle:@"Call" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+            
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:[@"tel:" stringByAppendingString:message]]];
+        }];
+        
+        UIAlertAction* closeButton = [UIAlertAction actionWithTitle:@"CLOSE" style:UIAlertActionStyleDefault handler:nil];
+        
+        [alert addAction:settingButton];
+        [alert addAction:closeButton];
+        
+        UIViewController* vc = [[[[UIApplication sharedApplication] delegate] window] rootViewController];
+        [vc presentViewController:alert animated:YES completion:nil];
+    } else {
+        
+        [[[UIAlertView alloc] initWithTitle:title message:message delegate:self cancelButtonTitle:@"Call" otherButtonTitles:@"Close", nil] show];
+    }
+}
+
+#pragma mark - UIAlertViewDelegate
+
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
+    
+    // gotosetting
+    if (buttonIndex == 0) {
+        
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:[@"tel:" stringByAppendingString:alertView.message]]];
+    }
 }
 
 @end

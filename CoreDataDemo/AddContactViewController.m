@@ -7,13 +7,12 @@
 //
 
 #import "AddContactViewController.h"
+#import "CoreDataManager.h"
 #import "ImageSupporter.h"
 #import "ViewController.h"
 #import "ContactCache.h"
-#import "NIInMemoryCache.h"
 #import "Constants.h"
 #import "Masonry.h"
-#import "CoreDataManager.h"
 
 @interface AddContactViewController () <UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIAlertViewDelegate>
 
@@ -27,8 +26,8 @@
 @property (nonatomic) UIImageView* phoneImageView;
 @property (nonatomic) CGFloat phoneNumberOrginY;
 @property (nonatomic) UIButton* doneButton;
-@property (nonatomic) UILabel* phoneLabel;
 @property (nonatomic) BOOL isSelectedImage;
+@property (nonatomic) UILabel* phoneLabel;
 
 @end
 
@@ -41,7 +40,7 @@
     [self setupBarButton];
     [self setTitle:@"Add Contacts"];
     
-    [[CoreDataManager sharedInstance] initSettingWithCoreDataName:@"CoreDataDemo" sqliteName:@"CoreDataDemoSqlite"];
+    [[CoreDataManager sharedInstance] initWithCoreDataName:@"CoreDataDemo" andSqliteName:@"CoreDataDemoSQLite"];
     
     [self setupDataUpdate];
 }
@@ -228,9 +227,9 @@
     
     if (_contact) {
 
-        NSPredicate* predicate = [[CoreDataManager sharedInstance] setPredicateEqualWithSearchKey:@"identifier" searchValue:[_contact identifier]];
+        NSPredicate* predicate = [[CoreDataManager sharedInstance] setConditonWithSearchKey:@"identifier" searchValue:[_contact identifier]];
       
-        [[CoreDataManager sharedInstance] getEntityWithClass:CONTACT condition:predicate callbackQueue:nil success:^(NSArray* results) {
+        [[CoreDataManager sharedInstance] getEntitiesFromClass:CONTACT withCondition:predicate callbackQueue:nil success:^(NSArray* results) {
             
             Contact* updateContact = results[0];
          
@@ -245,7 +244,7 @@
                 if (_isSelectedImage) {
                     
                     [[ImageSupporter sharedInstance] storeImageToFolder:_profileImageView.image withImageName:_contact.identifier];
-                    [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:_profileImageView.image]] forKey:_contact.identifier];
+                    [[ContactCache sharedInstance] setImageForKey:_profileImageView.image forKey:_contact.identifier];
                 }
             }
          } failed:^(NSError* error) {
@@ -254,20 +253,19 @@
          }];
     } else {
         
-        Contact* contact = [[CoreDataManager sharedInstance] createInsertEntityWithClassName:CONTACT];
+        Contact* contact = [[CoreDataManager sharedInstance] createEntityForClass:CONTACT];
         contact.firstName = _firstNameTextField.text;
         contact.lastName = _lastNameTextField.text;
         contact.phoneNumber = _phoneNumberTextField.text;
         contact.company = _companyNameTextField.text;
         contact.identifier = [[NSUUID UUID] UUIDString];
+        [[CoreDataManager sharedInstance] save];
         
         if (_isSelectedImage) {
             
             [[ImageSupporter sharedInstance] storeImageToFolder:_profileImageView.image withImageName:contact.identifier];
             [[ContactCache sharedInstance] setImageForKey:[[ImageSupporter sharedInstance] resizeImage:[[ImageSupporter sharedInstance] resizeImage:_profileImageView.image]] forKey:contact.identifier];
         }
-
-        [[CoreDataManager sharedInstance] save];
       }
 
     ViewController* viewController = (ViewController *)[self.navigationController.viewControllers objectAtIndex:0];
@@ -281,7 +279,7 @@
     
     [self dismisKeyboard];
     
-    [[ImageSupporter sharedInstance] checkPermissionPhoto:^(NSString* errorString) {
+    [[ImageSupporter sharedInstance] checkPhotoPermission:^(NSString* errorString) {
         
         if (!errorString) {
             
@@ -292,7 +290,7 @@
             [self presentViewController:picker animated:YES completion:nil];
         } else {
             
-            [[[UIAlertView alloc] initWithTitle:errorString message:@"Please! Enable to use" delegate:self cancelButtonTitle:@"CLOSE" otherButtonTitles:@"GO TO SETTING", nil] show];
+            [self showMessage:@"Please! Enable to use" withTitle:errorString];
         }
     }];
 }
@@ -305,8 +303,9 @@
     
     if (chosenImage) {
         
+        UIImage* imageResize = [[ImageSupporter sharedInstance] resizeImage:chosenImage];
+        _profileImageView.image = [[ImageSupporter sharedInstance] makeRoundImage:imageResize];
         _isSelectedImage = YES;
-        _profileImageView.image = [[ImageSupporter sharedInstance] makeRoundImage:[[ImageSupporter sharedInstance] resizeImage:chosenImage]];
     }
     
     [picker dismissViewControllerAnimated:YES completion:nil];
@@ -411,6 +410,7 @@
             make.height.mas_equalTo(self.view.frame.size.height - kbSize.height);
             make.width.mas_equalTo(self.view.frame.size.width);
         }];
+        
         [self.view layoutIfNeeded];
         [_containScrollView layoutIfNeeded];
         _containScrollView.contentSize = CGSizeMake(0,0);
@@ -438,4 +438,31 @@
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]];
     }
 }
+
+#pragma mark - showMessage
+
+- (void)showMessage:(NSString*)message withTitle:(NSString *)title {
+    
+    if ([UIAlertController class]) {
+        
+        UIAlertController * alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+        
+        UIAlertAction* settingButton = [UIAlertAction actionWithTitle:@"GO TO SETTING" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+            
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]];
+        }];
+        
+        UIAlertAction* closeButton = [UIAlertAction actionWithTitle:@"CLOSE" style:UIAlertActionStyleDefault handler:nil];
+        
+        [alert addAction:settingButton];
+        [alert addAction:closeButton];
+        
+        UIViewController* vc = [[[[UIApplication sharedApplication] delegate] window] rootViewController];
+        [vc presentViewController:alert animated:YES completion:nil];
+    } else {
+        
+        [[[UIAlertView alloc] initWithTitle:title message:message delegate:self cancelButtonTitle:@"CLOSE" otherButtonTitles:@"GO TO SETTING", nil] show];
+    }
+}
+
 @end

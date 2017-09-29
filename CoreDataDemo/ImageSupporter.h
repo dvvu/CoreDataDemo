@@ -26,8 +26,8 @@
 #pragma mark - profileImageDefault
 - (UIImage *)profileImageDefault:(NSString *)textNameDefault;
 
-#pragma mark - checkPermissionPhoto
-- (void)checkPermissionPhoto:(void(^)(NSString *))completion;
+#pragma mark - checkPhotoPermission
+- (void)checkPhotoPermission:(void(^)(NSString *))completion;
 
 #pragma mark - storeImageToFolder
 - (void)storeImageToFolder:(UIImage *)image withImageName:(NSString *)imageName;

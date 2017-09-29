@@ -100,7 +100,7 @@
         
         NSString* imgfileName = [NSString stringWithFormat:@"%@%@", imageName, @".png"];
         
-        // File we want to create in the documents directory
+        // File is created in the documents directory
         NSString* imgfilePath = [dataPath stringByAppendingPathComponent:imgfileName];
         
         // Write the file
@@ -193,7 +193,7 @@
 
 #pragma mark - checkPermissionPhoto
 
-- (void)checkPermissionPhoto:(void(^)(NSString *))completion {
+- (void)checkPhotoPermission:(void(^)(NSString *))completion {
     
     dispatch_async(_photoPermissionQueue, ^ {
         

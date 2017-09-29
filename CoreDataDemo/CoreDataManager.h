@@ -16,28 +16,28 @@ typedef void (^CoreDataSaveSuccess)();
 
 @interface CoreDataManager : NSObject
 
-#pragma mark - initSettingWithCoreDataName
-- (void)initSettingWithCoreDataName:(NSString *)coreDataName sqliteName:(NSString *)sqliteName;
+#pragma mark - save
+- (void)save;
+
+#pragma mark - delete
+- (void)deleteEntity:(id)entity;
 
 #pragma mark - Singletone
 + (CoreDataManager *)sharedInstance;
 
-#pragma mark - getEntityWithClass
-- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed;
+#pragma mark - createEntityForClass
+- (id)createEntityForClass:(NSString *)entityClass;
 
-#pragma mark - getEntityWithClass
-- (void)getEntityWithClass:(NSString *)entityClass condition:(NSPredicate *)predicate fromIndex:(int)index resultsLimit:(int)limit callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed;
-
-#pragma mark - insert
-- (id)createInsertEntityWithClassName:(NSString *)className;
-
-#pragma mark - delete
-- (void)deleteWithEntity:(id)entity;
-
-#pragma mark - save
-- (void)save;
+#pragma mark - settingCoreDataWithName
+- (void)initWithCoreDataName:(NSString *)coreDataName andSqliteName:(NSString *)sqliteName;
 
 #pragma mark - predicate to setCondition
-- (NSPredicate *)setPredicateEqualWithSearchKey:(NSString *)searchkey searchValue:(id)searchValue;
+- (NSPredicate *)setConditonWithSearchKey:(NSString *)searchkey searchValue:(id)searchValue;
+
+#pragma mark - getEntityFromClass if queue = nil -> callback main
+- (void)getEntitiesFromClass:(NSString *)entityClass withCondition:(NSPredicate *)condition callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed;
+
+#pragma mark - getEntityWithClass if queue = nil -> callback main
+- (void)getEntitiesFromClass:(NSString *)entityClass withCondition:(NSPredicate *)condition maximumEntities:(int)maximumEntities fromIndex:(int)index callbackQueue:(dispatch_queue_t)queue success:(CoreDataFetchSuccess)success failed:(CoreDataFailed)failed;
 
 @end
